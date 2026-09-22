@@ -43,6 +43,16 @@ The API is provider-neutral. AI secrets stay server-side.
 
 Long-term capability areas include chat, reasoning, memory, research, web access, browser interaction, files, documents, data analysis, code, media, translation, agents, workflows, automation, scheduling, connectors, MCP, APIs, SDKs and audit/verification.
 
+## Messaging channels
+
+AELIA now has a messaging gateway under services/messaging for WhatsApp and Telegram. The gateway sends incoming messages into the same AELIA API and returns the agent response to the originating channel.
+
+- WhatsApp: owner-controlled Baileys linked-device adapter for the 2348104468690 account
+- Telegram: Bot API webhook adapter using BotFather-created bots
+- Production direction: add the official WhatsApp Business Platform/Cloud API adapter alongside Baileys for business-scale operation
+
+See services/messaging/README.md for deployment and pairing steps. Never commit provider tokens or session credentials.
+
 ## Ecosystem
 
 First-party connector targets:
