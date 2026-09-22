@@ -34,7 +34,7 @@ function persist(){localStorage.setItem(AELIA.storageKey,JSON.stringify(state));
 function esc(s){return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",""":"&quot;","'":"&#039;"}[c]));}
 function toast(msg){const el=document.querySelector("#toast");el.textContent=msg;el.classList.add("show");clearTimeout(window.__toast);window.__toast=setTimeout(()=>el.classList.remove("show"),2600);}
 function activeConv(){return state.conversations[0];}
-function setView(view){state.view=view;document.querySelectorAll(".nav-item").forEach(x=>x.classList.toggle("active",x.dataset.view===view));const labels={home:"Today",chat:"Chat & Reason",agents:"AELIA Agents",research:"Research",create:"Create",projects:"Projects",files:"Files & Knowledge",workflows:"Automations",connectors:"Connectors",developers:"Developers",settings:"Settings"};document.querySelector("#crumb").textContent=labels[view]||"AELIA";render();}
+function setView(view){state.view=view;document.querySelectorAll(".nav-item").forEach(x=>x.classList.toggle("active",x.dataset.view===view));const labels={home:"Today",chat:"Chat & Reason",agents:"AELIA Agents",research:"Research",create:"Create",projects:"Projects",files:"Files & Knowledge",workflows:"Automations",connectors:"Connectors",channels:"Channels",developers:"Developers",settings:"Settings"};document.querySelector("#crumb").textContent=labels[view]||"AELIA";render();}
 function render(){document.body.classList.toggle("night",AELIA.theme==="night");const root=document.querySelector("#view");root.innerHTML=views[state.view]();bind();if(state.view==="chat")scrollMessages();}
 
 const views={
@@ -130,6 +130,24 @@ workflows:()=>`
   <div class="page-head"><div><h1>Automations</h1><p>Move from one-off prompts to reliable, observable work.</p></div><button class="btn primary" data-action="new-workflow">＋ New workflow</button></div>
   <div class="grid"><article class="card feature"><div class="card-icon">↯</div><h3>Research → brief</h3><p>Search → extract → synthesize → verify → export.</p><button class="mini" data-action="workflow-demo">Run demo</button></article><article class="card feature"><div class="card-icon">⌘</div><h3>Code delivery</h3><p>Inspect → plan → implement → test → review → deploy.</p></article><article class="card feature"><div class="card-icon">◈</div><h3>Ecosystem automation</h3><p>Trigger authorized actions across Novella Matrix, SeaChat and Akode.</p></article><article class="card feature"><div class="card-icon">◷</div><h3>Scheduled agents</h3><p>Daily briefings, monitoring, recurring research and scheduled jobs.</p></article><article class="card feature"><div class="card-icon">✓</div><h3>Human approval gates</h3><p>Require approval before sensitive external actions or spending.</p></article><article class="card feature"><div class="card-icon">◉</div><h3>Run history</h3><p>Track inputs, tool calls, outputs, failures and verification evidence.</p></article></div>
 `,
+channels:()=>`
+  <div class="page-head"><div><h1>AELIA Channels</h1><p>Bring AELIA into the places people already communicate.</p></div></div>
+  <div class="grid">
+    <div class="card feature"><div class="card-icon">◉</div><h3>WhatsApp · 08104468690</h3><p>Owner-controlled Baileys gateway is wired into the AELIA API. Pair the phone once, keep the auth volume persistent, and incoming messages can be answered by AELIA.</p><span class="tag">Baileys</span><span class="tag">Linked device</span><div class="actions"><a class="btn primary" href="https://wa.me/2348104468690?text=Hello%20AELIA%20AI" target="_blank" rel="noopener">Open WhatsApp</a><button class="btn" data-action="channel-info" data-channel="whatsapp">Setup checklist</button></div></div>
+    <div class="card feature"><div class="card-icon">✈</div><h3>Telegram · BotFather</h3><p>Telegram webhook gateway is wired into the same AELIA API. Create the bot with BotFather, store the bot token server-side, then register the webhook.</p><span class="tag">Bot API</span><span class="tag">Webhook</span><div class="actions"><button class="btn primary" data-action="channel-info" data-channel="telegram">Setup checklist</button></div></div>
+    <div class="card feature"><div class="card-icon">∞</div><h3>One AELIA identity</h3><p>Next we link channel identities to AELIA users so the same agent, memory, permissions, projects and tasks can follow the user across web, WhatsApp and Telegram.</p><span class="tag">Identity</span><span class="tag">Memory</span><span class="tag">Permissions</span></div>
+  </div>
+  <div class="section-title"><div><h2>Channel architecture</h2><p>Every channel becomes an adapter, not a separate brain.</p></div></div>
+  <div class="panel"><div class="code">WEB / WHATSAPP / TELEGRAM / FUTURE CHANNELS
+        ↓
+AELIA CHANNEL GATEWAY
+        ↓
+IDENTITY → MEMORY → POLICY → AGENT ROUTER
+        ↓
+TOOLS / CONNECTORS / WORKFLOWS
+        ↓
+VERIFICATION → RESPONSE → AUDIT</div></div>
+`,
 connectors:()=>`
   <div class="page-head"><div><h1>Connector Hub</h1><p>Apps become AELIA capabilities through scoped permissions, authentication and health checks.</p></div><button class="btn primary" data-action="add-connector">＋ Add connector</button></div>
   <div class="connector-grid">${state.connectors.map(c=>`<article class="card connector"><span class="state">${esc(c.status)}</span><div class="card-icon">${esc(c.icon)}</div><h3>${esc(c.name)}</h3><p>${esc(c.desc)}</p><div style="margin-top:14px"><button class="mini" data-action="connector" data-name="${esc(c.name)}">${c.status==="Connected"?"Manage":"Configure"}</button></div></article>`).join("")}</div>
@@ -188,11 +206,34 @@ function actions(action,data){
   if(action==="quick-automate"){setView("workflows");return;}
   if(action==="quick-connect"){setView("connectors");return;}
   if(action==="new-agent"){const name=prompt("Agent name?");if(name){state.agents.push({id:crypto.randomUUID(),name,desc:"Custom AELIA agent.",caps:["PLAN","REASON","VERIFY"],status:"Draft"});persist();render();toast("Agent created in the workspace.");}return;}
-  if(action==="agent-run"){toast("Agent execution is waiting for the production runtime, permissions and tools.");return;}
+  if(action==="agent-run"){
+    const a=state.agents.find(x=>x.id===data.id);
+    if(!a)return;
+    const task=prompt("What should "+a.name+" do?");
+    if(!task)return;
+    toast("Sending task to "+a.name+"…");
+    fetch((AELIA.apiBase||"").replace(/\\/$/,"")+"/v1/agents/run",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({agent:a.id,task,model:AELIA.model})})
+      .then(r=>r.json())
+      .then(d=>{
+        const output=d.output||d.message||"Agent task accepted.";
+        state.conversations.unshift({id:crypto.randomUUID(),title:a.name+": "+task.slice(0,28),messages:[{role:"user",content:task},{role:"assistant",content:output}]});
+        persist();setView("chat");toast(d.status==="completed"?"Agent completed the task.":"Agent task accepted.");
+      })
+      .catch(()=>toast("AELIA Agent could not reach the production API."));
+    return;
+  }
   if(action==="new-project"){const name=prompt("Project name?");if(name){state.projects.push({name,type:"Workspace",status:"Active"});persist();render();toast("Project created.");}return;}
   if(action==="open-project"){toast(data.name+" project workspace is ready for persistent context.");return;}
   if(action==="toggle-goal"){const i=Number(data.index);state.goals[i].done=!state.goals[i].done;persist();render();return;}
   if(action==="connector"){toast(data.name+" is defined; OAuth/API credentials and scoped tools still need to be connected.");return;}
+  if(action==="channel-info"){
+    if(data.channel==="whatsapp"){
+      alert("WHATSAPP TODAY\\n\\n1. Deploy services/messaging on Coolify with a persistent /data volume.\\n2. Set WHATSAPP_PHONE_NUMBER=2348104468690.\\n3. Set AELIA_API_BASE=https://api.aeliaai.org.\\n4. Run: npm run whatsapp:pair\\n5. On your phone: WhatsApp → Settings → Linked Devices → Link with phone number instead.\\n6. Enter the pairing code.\\n7. Keep the messaging service running.");
+    }else{
+      alert("TELEGRAM TODAY\\n\\n1. Open @BotFather in Telegram.\\n2. Create a bot and copy its token.\\n3. Set TELEGRAM_BOT_TOKEN on the messaging service.\\n4. Set PUBLIC_BASE_URL=https://msg.aeliaai.org.\\n5. Set TELEGRAM_WEBHOOK_SECRET to a random value.\\n6. Deploy the service and POST /telegram/set-webhook once.\\n7. Message the bot and AELIA will answer through the same API.");
+    }
+    return;
+  }
   if(action==="add-connector"){toast("Connector SDK contract: manifest → auth → permissions → tools → health → audit.");return;}
   if(action==="new-workflow"){toast("Workflow builder is next: trigger → steps → tools → approvals → verification → outputs.");return;}
   if(action==="workflow-demo"){toast("Demo workflow queued locally: search → analyze → verify → export.");return;}
