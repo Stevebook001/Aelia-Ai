@@ -65,6 +65,14 @@ const server=http.createServer(async(req,res)=>{
     if(req.method==="POST"&&url.pathname==="/v1/chat"){
       const payload=await body(req);send(res,200,await chat(payload));return;
     }
+    if(req.method==="POST"&&url.pathname==="/v1/briefing"){
+      const payload=await body(req);
+      send(res,200,{ok:true,briefing:{summary:"AELIA briefing foundation generated.",focus:payload.focus||"priority work",next_steps:payload.next_steps||[]},mode:client?"live":"foundation"});return;
+    }
+    if(req.method==="POST"&&url.pathname==="/v1/agents/run"){
+      const payload=await body(req);
+      send(res,202,{accepted:true,run_id:crypto.randomUUID(),agent:payload.agent||"aelia-operator",status:"queued",message:"Agent runtime accepted the task. Production worker execution and permission checks are next."});return;
+    }
     if(req.method==="POST"&&url.pathname==="/v1/tasks"){
       const payload=await body(req);
       send(res,202,{accepted:true,task_id:crypto.randomUUID(),status:"queued",type:payload.type||"general",message:"Task accepted by the AELIA foundation runtime. Worker execution will be attached to the production queue."});return;
