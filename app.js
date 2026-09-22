@@ -1,5 +1,5 @@
 const AELIA = {
-  apiBase: localStorage.getItem("aelia_api_base") || "",
+  apiBase: localStorage.getItem("aelia_api_base") || "https://api.aeliaai.org",
   model: localStorage.getItem("aelia_model") || "gpt-5.6-luna",
   storageKey: "aelia_workspace_v1"
 };
