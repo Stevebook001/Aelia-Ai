@@ -1,0 +1,15 @@
+{
+  "name":"@aelia/messaging",
+  "private":true,
+  "type":"module",
+  "scripts":{
+    "start":"node src/server.mjs",
+    "dev":"node --watch src/server.mjs",
+    "whatsapp:pair":"node src/whatsapp-pair.mjs"
+  },
+  "dependencies":{
+    "@whiskeysockets/baileys":"7.0.0-rc14",
+    "dotenv":"^16.4.7",
+    "pino":"^9.6.0"
+  }
+}
