@@ -3,29 +3,34 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="theme-color" content="#06111f">
+  <meta name="theme-color" content="#f7fbff">
   <meta name="description" content="AELIA AI — Light. Intelligence. Yours. A unified AI workspace being built by Novella Matrix.">
-  <title>AELIA AI — Workspace</title>
+  <title>AELIA AI — Intelligence Workspace</title>
   <link rel="stylesheet" href="./styles.css">
 </head>
 <body>
   <div id="app">
     <aside class="sidebar">
       <div class="brand"><span class="brand-mark">A</span><span>AELIA <b>AI</b></span></div>
+      <div class="brand-sub">Light. Intelligence. Yours.</div>
       <button class="new-chat" data-action="new-chat">＋ New chat</button>
       <nav id="nav">
         <button class="nav-item active" data-view="home">⌂ <span>Home</span></button>
+        <button class="nav-item" data-view="today">◷ <span>Today</span></button>
         <button class="nav-item" data-view="chat">◌ <span>Chat</span></button>
-        <button class="nav-item" data-view="agents">✦ <span>Agents</span></button>
+        <button class="nav-item" data-view="agents">✦ <span>AELIA Agents</span></button>
+        <button class="nav-item" data-view="tasks">✓ <span>Tasks</span></button>
         <button class="nav-item" data-view="projects">▦ <span>Projects</span></button>
         <button class="nav-item" data-view="files">□ <span>Files</span></button>
+        <button class="nav-item" data-view="memory">◎ <span>Memory</span></button>
         <button class="nav-item" data-view="connectors">◈ <span>Connectors</span></button>
         <button class="nav-item" data-view="workflows">↯ <span>Workflows</span></button>
+        <button class="nav-item" data-view="studio">✧ <span>AI Studio</span></button>
         <button class="nav-item" data-view="developers">⌘ <span>Developers</span></button>
         <button class="nav-item" data-view="settings">⚙ <span>Settings</span></button>
       </nav>
       <div class="sidebar-bottom">
-        <div class="mode-card"><span class="status-dot"></span><div><strong>Foundation mode</strong><small>API-ready · Demo fallback</small></div></div>
+        <div class="mode-card"><span class="status-dot"></span><div><strong id="mode-label">Foundation mode</strong><small id="mode-detail">API-ready · Demo fallback</small></div></div>
         <a class="whatsapp-link" href="https://wa.me/2348104468690?text=Hello%20AELIA%20AI%20team%2C%20I%20want%20to%20learn%20more." target="_blank" rel="noopener">WhatsApp AELIA</a>
       </div>
     </aside>
