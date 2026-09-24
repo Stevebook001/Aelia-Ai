@@ -1,90 +1,256 @@
 # AELIA AI — Light. Intelligence. Yours.
 
-AELIA AI is being built by Novella Matrix as a unified daily intelligence workspace.
+AELIA AI is the unified AI workspace being built by **Novella Matrix**.
 
-## Foundation v0.3
+**Founder:** Ibrahim Akanni Ahmad  
+**Organization:** Novella Matrix — Lagos, Nigeria  
+**Website:** https://aeliaai.org.ng/  
+**Public contact:** hello@aeliaai.org.ng  
+**Sponsor / guest-post contact:** blogs@aeliaai.org.ng
 
-The web app is intentionally more than a marketing page. It now has a bright workspace UI with:
+> Founder phone numbers are intentionally not published in this repository or website.
 
-- Today dashboard and daily launch checklist
-- Chat & Reason workspace
-- AELIA Agent roster
-- Chief / Research / Developer / Workflow agent foundations
-- Research workspace
-- Create workspace for writing, image, voice, video, data and code
+## Foundation
+
+The current web app is a bright, responsive workspace foundation with:
+
+- Animated glass AELIA identity
+- Chat & Reason
+- AELIA Agents
+- Research
+- Creation / media studio foundations
+- Code and developer workspace
 - Projects
 - Files & Knowledge
-- Automation concepts
+- Automations
 - Connector Hub
+- Channels
 - Developer Center
-- Command Center with Ctrl/Cmd+K
-- Bright/Night UI
-- API health state
+- Bright / Night mode
 - Local workspace persistence
+- SEO metadata, canonical URL, robots.txt and sitemap.xml
 
-The interface is designed around a long-term product goal: users should be able to ask AELIA to understand, create, research, build, connect and automate from one place.
+## 100+ capability roadmap
 
-## API foundation
+AELIA is designed as a provider-neutral orchestration layer. Planned capabilities include:
 
-Node.js service under `services/api`:
+1. Chat
+2. Reasoning
+3. Long-context tasks
+4. Structured output
+5. Deep research
+6. Web search
+7. Source verification
+8. Summarization
+9. Translation
+10. Multilingual conversation
+11. Memory
+12. Knowledge bases
+13. Document Q&A
+14. OCR
+15. Vision
+16. Speech-to-text
+17. Text-to-speech
+18. Voice conversations
+19. Real-time voice
+20. Voice calls
+21. Video-call assistant
+22. Writing
+23. Editing
+24. Image generation
+25. Image editing
+26. Image understanding
+27. Video generation
+28. Long-form video pipeline
+29. Voice-over generation
+30. Music generation
+31. Song assistance
+32. Tone / melody assistance
+33. Sound effects
+34. Captions
+35. Presentations
+36. Social content
+37. Brand assets
+38. PDF generation
+39. Spreadsheet generation
+40. Data analysis
+41. Code generation
+42. Code explanation
+43. Debugging
+44. Test generation
+45. Code review
+46. Repository analysis
+47. GitHub workflows
+48. Pull-request assistance
+49. Issue triage
+50. Deployment assistance
+51. API design
+52. Database design
+53. SQL assistance
+54. Architecture planning
+55. Agent development
+56. Sandboxed execution
+57. Log analysis
+58. Security review
+59. Performance review
+60. Documentation generation
+61. Chief orchestrator agent
+62. Research agent
+63. Developer agent
+64. Creative agent
+65. Media agent
+66. Voice agent
+67. Support agent
+68. Sales agent
+69. Marketing agent
+70. Data agent
+71. Workflow operator
+72. Scheduled jobs
+73. Approval workflows
+74. Human handoff
+75. Tool permissions
+76. Agent memory
+77. Audit trail
+78. Retry and recovery
+79. Queues
+80. Long-running tasks
+81. GitHub connector
+82. Google connector
+83. Microsoft connector
+84. Telegram connector
+85. WhatsApp Business Platform connector
+86. Email connector
+87. Webhooks
+88. REST APIs
+89. MCP-compatible tools
+90. Novella Matrix connector
+91. SeaChat connector
+92. AKODE connector
+93. Payment connector
+94. Cloud storage
+95. Calendar
+96. CRM
+97. Support systems
+98. Analytics
+99. Publishing platforms
+100. AELIA developer apps
+101. Connector marketplace
+102. Agent marketplace
+103. Usage and credit controls
+104. Team workspaces
+105. Organization roles
+106. Secure sharing
+107. Export and deletion
+108. Observability
+109. Cost controls
+110. Human approval gates
 
-- `GET /health`
-- `GET /v1/capabilities`
-- `GET /v1/agents`
-- `POST /v1/chat`
-- `POST /v1/tasks`
-- `POST /v1/research`
+This roadmap is a plan; features are only considered live after their backend, permissions, infrastructure and testing are completed.
 
-The API is provider-neutral. AI secrets stay server-side.
+## Architecture direction
 
-## Architecture
+`User → AELIA API → Orchestrator → Policy/Memory → Capability Registry → Agents → Tools → Verification → Result → Audit`
 
-`User → AELIA API → Orchestrator → Planner/Memory/Policy → Capability Registry → Agents → Tools → Verification → Result → Memory/Audit`
-
-Long-term capability areas include chat, reasoning, memory, research, web access, browser interaction, files, documents, data analysis, code, media, translation, agents, workflows, automation, scheduling, connectors, MCP, APIs, SDKs and audit/verification.
-
-## Messaging channels
-
-AELIA now has a messaging gateway under services/messaging for WhatsApp and Telegram. The gateway sends incoming messages into the same AELIA API and returns the agent response to the originating channel.
-
-- WhatsApp: owner-controlled Baileys linked-device adapter for the 2348104468690 account
-- Telegram: Bot API webhook adapter using BotFather-created bots
-- Production direction: add the official WhatsApp Business Platform/Cloud API adapter alongside Baileys for business-scale operation
-
-See services/messaging/README.md for deployment and pairing steps. Never commit provider tokens or session credentials.
-
-## Ecosystem
-
-First-party connector targets:
-
-- Novella Matrix
-- SeaChat
-- Akode
-
-Future external connectors can be installed through a permissioned connector model.
+- Web: Vercel
+- DNS / edge / security: Cloudflare
+- API: Vercel Functions, Cloudflare Workers, or Coolify depending workload
+- Storage: R2 or S3-compatible object storage
+- Database: production database selected during backend phase
+- Queues: queue/worker layer for long jobs
+- AI: provider adapter layer so AELIA can route each task appropriately
+- Integrations: OAuth, API keys, webhooks and scoped permissions
 
 ## Domains
 
-aeliaai.org · app.aeliaai.org · api.aeliaai.org · mcp.aeliaai.org · docs.aeliaai.org · developers.aeliaai.org · status.aeliaai.org
+Primary:
+- https://aeliaai.org.ng/
+- https://www.aeliaai.org.ng/
 
-## Current production requirements
+Planned:
+- https://api.aeliaai.org.ng/
+- https://dev.aeliaai.org.ng/
+- https://admin.aeliaai.org.ng/
 
-The current web app can run without production secrets, but live AI requires:
+## Messaging
 
-1. Server-side AI provider API key.
-2. Production API deployment.
-3. PostgreSQL database for identity, projects, conversations, permissions, usage and billing records.
-4. Redis or an equivalent queue/cache for long-running jobs.
-5. Object storage for files and generated assets.
-6. Email provider for verification, security and `@aeliaai.org` mail.
-7. Payment provider for subscriptions/credits.
-8. Search/web and media providers when those capabilities are enabled.
-9. Monitoring, rate limiting, audit logs and backups.
+AELIA is being prepared for:
 
-Never commit secrets to GitHub.
+- WhatsApp Business Platform / Cloud API
+- Telegram Bot API
+- Web chat
+- Future SeaChat integration
+- Email workflows
 
-## Product principle
+Admin controls will include:
 
-AELIA should not be built as a collection of disconnected buttons. Each feature should eventually connect to the same identity, memory, permission, capability, task, verification and audit layers so users can move from a question to a real outcome.
+- WhatsApp AI ON / OFF
+- Telegram AI ON / OFF
+- Human takeover
+- Maintenance mode
+- Emergency stop
+- Rate and usage limits
 
-Public product language should describe ambitious goals as goals, not unsupported claims of being the world's best.
+## Email
+
+Planned public addresses:
+
+- hello@aeliaai.org.ng
+- support@aeliaai.org.ng
+- admin@aeliaai.org.ng
+- security@aeliaai.org.ng
+- billing@aeliaai.org.ng
+- developers@aeliaai.org.ng
+- blogs@aeliaai.org.ng
+
+Cloudflare Email Routing can forward these addresses to an existing inbox. A full mailbox provider is a separate decision.
+
+## Ecosystem
+
+Known Novella Matrix projects:
+
+- https://novellamatrix.org/
+- https://seachat.me/
+- https://akode.dev/
+- https://gorovik.com/
+- https://aeliaai.org.ng/
+
+Additional canonical project links can be added as they are confirmed.
+
+## Environment variables
+
+Never commit real secrets.
+
+Production integrations may require:
+
+- AI provider API keys
+- Search credentials
+- Database URL
+- Storage credentials
+- WhatsApp credentials
+- Telegram bot token
+- OAuth credentials
+- Payment credentials
+- Email provider credentials
+- Cloudflare credentials where required
+
+See `.env.example`.
+
+## Security
+
+- No secrets in Git
+- Least-privilege OAuth
+- Per-connector permissions
+- Webhook signature verification
+- User confirmation for sensitive actions
+- Rate limiting
+- Abuse protection
+- Audit logs
+- Data retention controls
+- Account export and deletion
+- Separate public frontend and privileged backend
+
+## Development rule
+
+The public frontend can be deployed before sensitive integrations are enabled. Credentials belong only in Vercel, Cloudflare or Coolify environment settings.
+
+© Novella Matrix. AELIA AI is a Novella Matrix project.
