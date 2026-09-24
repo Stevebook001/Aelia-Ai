@@ -1,5 +1,5 @@
 const AELIA={
-  apiBase:localStorage.getItem("aelia_api_base")||"https://api.aeliaai.org",
+  apiBase:localStorage.getItem("aelia_api_base")||"https://api.aeliaai.org.ng",
   model:localStorage.getItem("aelia_model")||"gpt-5.6-luna",
   storageKey:"aelia_workspace_v2",
   theme:localStorage.getItem("aelia_theme")||"bright"
@@ -45,7 +45,7 @@ home:()=>`
     <p>AELIA is being shaped as a daily AI operating workspace: one place to think, research, create, code, understand files, coordinate agents, connect your apps and automate work. The interface is live now; production capabilities are being connected underneath it.</p>
     <div class="actions"><button class="btn primary" data-view="chat">Ask AELIA →</button><button class="btn secondary" data-view="agents">Meet AELIA Agents</button><button class="btn" data-view="research">Start research</button></div>
   </div>
-  <div class="stats">
+  <div class="capability-strip"><span>Chat & Reasoning</span><span>Agents</span><span>Deep Research</span><span>Code & Debug</span><span>Image</span><span>Video + Voice</span><span>Music</span><span>Files</span><span>Automation</span><span>Connectors</span><span>Voice Calls</span><span>Multilingual</span></div>\n  <div class="stats">
     <div class="stat"><strong>24/7</strong><span>Designed for daily use</span></div>
     <div class="stat"><strong>30+</strong><span>Capability primitives planned</span></div>
     <div class="stat"><strong>8</strong><span>Connector targets defined</span></div>
