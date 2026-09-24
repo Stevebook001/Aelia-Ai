@@ -21,3 +21,16 @@ button,input,textarea,select{font:inherit}button{cursor:pointer}a{color:inherit;
 .toast{position:fixed;right:20px;bottom:20px;background:var(--text);color:var(--bg);padding:11px 14px;border-radius:11px;box-shadow:var(--shadow);transform:translateY(20px);opacity:0;pointer-events:none;transition:.2s;z-index:100}.toast.show{transform:none;opacity:1}
 @media(max-width:1100px){.stats{grid-template-columns:repeat(3,1fr)}.quick-grid{grid-template-columns:repeat(2,1fr)}.grid,.connector-grid{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:760px){.sidebar{position:fixed;transform:translateX(-100%);transition:.2s}.sidebar.open{transform:none}.mobile-menu{display:block}.topbar{padding:0 15px}.api-state{display:none}.view{padding:15px}.workspace{grid-template-columns:1fr;height:auto}.conversation-list{display:none}.grid,.connector-grid,.form-grid,.quick-grid{grid-template-columns:1fr}.hero-card{padding:22px}.hero-card h1{font-size:42px}.stats{grid-template-columns:1fr 1fr}.profile strong{display:none}}
+
+/* AELIA animated glass mark — bright, lightweight, CSS-only */
+.brand-mark{position:relative;overflow:visible;width:38px;height:38px;border-radius:13px;background:rgba(255,255,255,.78);border:1px solid rgba(0,169,232,.24);box-shadow:0 8px 28px rgba(0,169,232,.18),inset 0 1px 0 rgba(255,255,255,.95);backdrop-filter:blur(14px);color:#062238}
+.aelia-core{position:relative;z-index:3;display:grid;place-items:center;width:100%;height:100%;font-weight:950;font-size:18px;background:linear-gradient(135deg,#00c8ff,#725cff 60%,#ffbd35);-webkit-background-clip:text;background-clip:text;color:transparent;animation:aeliaGlow 3.2s ease-in-out infinite}
+.aelia-orbit{position:absolute;inset:5px;border-radius:50%;border:1.5px solid rgba(0,195,255,.65);transform:rotate(-22deg);animation:aeliaOrbit 4.5s linear infinite}
+.aelia-orbit:before,.aelia-orbit:after{content:"";position:absolute;border-radius:50%;background:#00c8ff;box-shadow:0 0 10px #00c8ff;animation:aeliaPulse 1.8s ease-in-out infinite}
+.aelia-orbit:before{width:4px;height:4px;left:2px;top:8px}.aelia-orbit:after{width:3px;height:3px;right:4px;bottom:7px;background:#ffbd35;box-shadow:0 0 9px #ffbd35;animation-delay:.7s}
+@keyframes aeliaOrbit{to{transform:rotate(338deg)}}@keyframes aeliaPulse{50%{transform:scale(1.8);opacity:.55}}@keyframes aeliaGlow{50%{filter:drop-shadow(0 0 7px rgba(0,200,255,.42))}}
+.hero-card{isolation:isolate}.hero-card:before{content:"";position:absolute;inset:-30% -10%;z-index:-1;background:linear-gradient(110deg,transparent 0%,rgba(255,255,255,.48) 42%,rgba(0,220,255,.10) 50%,transparent 58%);transform:translateX(-55%) rotate(-8deg);animation:aeliaGlassSweep 7s ease-in-out infinite}
+@keyframes aeliaGlassSweep{0%,25%{transform:translateX(-55%) rotate(-8deg)}55%,100%{transform:translateX(55%) rotate(-8deg)}}
+.capability-strip{display:flex;flex-wrap:wrap;gap:7px;margin-top:16px}.capability-strip span{padding:6px 9px;border-radius:999px;border:1px solid rgba(0,169,232,.18);background:rgba(255,255,255,.62);backdrop-filter:blur(10px);font-size:10px;font-weight:750;color:#17607e}
+.night .capability-strip span{background:rgba(10,35,52,.7);color:#b9efff}
+@media(prefers-reduced-motion:reduce){.aelia-orbit,.aelia-core,.aelia-orbit:before,.aelia-orbit:after,.hero-card:before{animation:none}}
