@@ -161,9 +161,9 @@ connectors:()=>`
 developers:()=>`
   <div class="page-head"><div><h1>Developer Center</h1><p>Build AELIA into apps, agents and connected products.</p></div></div>
   <div class="grid"><article class="card feature"><div class="card-icon">⌘</div><h3>API</h3><p>Use AELIA as an intelligence and orchestration layer.</p><span class="tag">api.aeliaai.org</span></article><article class="card feature"><div class="card-icon">◈</div><h3>MCP</h3><p>Expose AELIA capabilities to compatible agent and tool clients.</p><span class="tag">mcp.aeliaai.org</span></article><article class="card feature"><div class="card-icon">⚡</div><h3>SDKs</h3><p>JavaScript, Python and future SDKs can share one provider-neutral contract.</p><span class="tag">Planned</span></article></div>
-  <div class="panel"><h3>Base API</h3><div class="code">https://api.aeliaai.org/v1</div></div>
+  <div class="panel"><h3>Base API</h3><div class="code">https://api.aeliaai.org.ng/v1</div></div>
   <div class="panel"><h3>MCP server</h3><div class="code">https://mcp.aeliaai.org</div></div>
-  <div class="panel"><h3>Example request</h3><pre class="code">curl -X POST https://api.aeliaai.org/v1/chat \
+  <div class="panel"><h3>Example request</h3><pre class="code">curl -X POST https://api.aeliaai.org.ng/v1/chat \
   -H "Content-Type: application/json" \
   -d '{"message":"Hello AELIA"}'</pre></div>
 `,
@@ -195,7 +195,7 @@ async function sendChat(textValue){
     const res=await fetch(base+"/v1/chat",{method:"POST",headers:{"Content-Type":"application/json",...(AELIA.token?{"Authorization":"Bearer "+AELIA.token}: {})},body:JSON.stringify({message:clean,model:AELIA.model,conversation_id:conv.id,history:conv.messages.slice(-12,-1)})});
     if(!res.ok)throw new Error("API "+res.status);
     const data=await res.json();pending.content=data.output||data.message||"AELIA returned an empty response.";
-  }catch(e){pending.content="AELIA foundation mode: your workspace received the request, but the production AI runtime is not connected yet. Connect api.aeliaai.org and its server-side AI credentials to turn this into a live response."; }
+  }catch(e){pending.content="AELIA foundation mode: your workspace received the request, but the production AI runtime is not connected yet. Connect api.aeliaai.org.ng and its server-side AI credentials to turn this into a live response."; }
   persist();render();
 }
 function scrollMessages(){const m=document.querySelector("#messages");if(m)m.scrollTop=m.scrollHeight;}
