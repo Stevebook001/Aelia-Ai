@@ -2,7 +2,9 @@ const AELIA={
   apiBase:localStorage.getItem("aelia_api_base")||"https://api.aeliaai.org.ng",
   model:localStorage.getItem("aelia_model")||"gpt-5.6-luna",
   storageKey:"aelia_workspace_v2",
-  theme:localStorage.getItem("aelia_theme")||"bright"
+  theme:localStorage.getItem("aelia_theme")||"bright",
+  token:localStorage.getItem("aelia_token")||"",
+  user:JSON.parse(localStorage.getItem("aelia_user")||"null")
 };
 
 const saved=JSON.parse(localStorage.getItem(AELIA.storageKey)||"null");
@@ -27,7 +29,9 @@ const state=saved||{
     {name:"Web",desc:"Search, browsing and source-grounded research.",status:"Planned",icon:"W"},
     {name:"Payments",desc:"Billing, credits, subscriptions and invoices.",status:"Planned",icon:"₦"}
   ],
-  goals:[{title:"Connect the production AELIA API",done:false},{title:"Create your first AELIA Agent",done:false},{title:"Connect a project or repository",done:false}]
+  goals:[{title:"Connect the production AELIA API",done:false},{title:"Create your first AELIA Agent",done:false},{title:"Connect a project or repository",done:false}],
+  tasks:[],
+  memories:[]
 };
 
 function persist(){localStorage.setItem(AELIA.storageKey,JSON.stringify(state));}
@@ -40,10 +44,11 @@ function render(){document.body.classList.toggle("night",AELIA.theme==="night");
 const views={
 home:()=>`
   <div class="hero-card">
+    <span class="bright-orb" aria-hidden="true"></span>
     <div class="eyebrow">AELIA AI · Light. Intelligence. Yours.</div>
     <h1>Your intelligence, <span class="gradient">always within reach.</span></h1>
     <p>AELIA is being shaped as a daily AI operating workspace: one place to think, research, create, code, understand files, coordinate agents, connect your apps and automate work. The interface is live now; production capabilities are being connected underneath it.</p>
-    <div class="actions"><button class="btn primary" data-view="chat">Ask AELIA →</button><button class="btn secondary" data-view="agents">Meet AELIA Agents</button><button class="btn" data-view="research">Start research</button></div>
+    <div class="actions"><button class="btn primary" data-view="chat">Ask AELIA →</button><button class="btn secondary" data-view="account">${AELIA.user?"Open account":"Create account / Sign in"}</button><button class="btn secondary" data-view="agents">Meet AELIA Agents</button><button class="btn" data-view="research">Start research</button></div>
   </div>
   <div class="capability-strip"><span>Chat & Reasoning</span><span>Agents</span><span>Deep Research</span><span>Code & Debug</span><span>Image</span><span>Video + Voice</span><span>Music</span><span>Files</span><span>Automation</span><span>Connectors</span><span>Voice Calls</span><span>Multilingual</span></div>\n  <div class="stats">
     <div class="stat"><strong>24/7</strong><span>Designed for daily use</span></div>
@@ -162,6 +167,16 @@ developers:()=>`
   -H "Content-Type: application/json" \
   -d '{"message":"Hello AELIA"}'</pre></div>
 `,
+account:()=>`
+  <div class="page-head"><div><h1>${AELIA.user?"Your AELIA account":"Join AELIA"}</h1><p>Accounts, conversations, agents and future projects will live behind one AELIA identity.</p></div></div>
+  ${AELIA.user?`
+    <div class="auth-card"><div class="eyebrow">AELIA IDENTITY</div><h2>Welcome, ${esc(AELIA.user.name||"AELIA user")}.</h2><p>${esc(AELIA.user.email)}</p><div class="account-chip"><div class="account-avatar">${esc((AELIA.user.name||"A").slice(0,1).toUpperCase())}</div><div><strong>Signed in</strong><small>AELIA account is connected to this browser.</small></div></div><div class="actions"><button class="btn" data-action="refresh-account">Refresh account</button><button class="btn secondary" data-action="logout">Sign out</button><button class="btn primary" data-view="chat">Start chatting →</button></div></div>`
+  :`
+    <div class="auth-card"><div class="auth-tabs"><button class="auth-tab active" data-auth-tab="register">Create account</button><button class="auth-tab" data-auth-tab="login">Sign in</button></div>
+      <form id="auth-form" class="auth-form"><input id="auth-name" placeholder="Your name" autocomplete="name" required><input id="auth-email" type="email" placeholder="Email address" autocomplete="email" required><input id="auth-password" type="password" placeholder="Password (8+ characters)" autocomplete="new-password" minlength="8" required><button class="btn primary" type="submit">Create my AELIA account →</button></form>
+      <p id="auth-status" style="color:var(--muted);font-size:12px">Your password is sent only to the AELIA API over HTTPS; never put API secrets in the browser.</p>
+    </div>`
+  }`,
 settings:()=>`
   <div class="page-head"><div><h1>Settings</h1><p>Workspace configuration. Production identity and billing will move server-side.</p></div></div>
   <div class="panel"><h3>AELIA identity</h3><p>Official product mail should use the aeliaai.org domain.</p><div class="form-grid"><div class="field"><label>Display name</label><input value="Ibrahim Akanni Ahmad" id="display-name"></div><div class="field"><label>Primary product email</label><input value="hello@aeliaai.org" id="product-email"></div></div></div>
@@ -177,7 +192,7 @@ async function sendChat(textValue){
   const pending={role:"assistant",content:"Thinking…"};conv.messages.push(pending);render();
   try{
     const base=(AELIA.apiBase||"").replace(/\/$/,"");if(!base)throw new Error("no api");
-    const res=await fetch(base+"/v1/chat",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({message:clean,model:AELIA.model,conversation_id:conv.id,history:conv.messages.slice(-12,-1)})});
+    const res=await fetch(base+"/v1/chat",{method:"POST",headers:{"Content-Type":"application/json",...(AELIA.token?{"Authorization":"Bearer "+AELIA.token}: {})},body:JSON.stringify({message:clean,model:AELIA.model,conversation_id:conv.id,history:conv.messages.slice(-12,-1)})});
     if(!res.ok)throw new Error("API "+res.status);
     const data=await res.json();pending.content=data.output||data.message||"AELIA returned an empty response.";
   }catch(e){pending.content="AELIA foundation mode: your workspace received the request, but the production AI runtime is not connected yet. Connect api.aeliaai.org and its server-side AI credentials to turn this into a live response."; }
@@ -189,9 +204,14 @@ function bind(){
   document.querySelectorAll("[data-action]").forEach(el=>el.addEventListener("click",()=>actions(el.dataset.action,el.dataset)));
   const form=document.querySelector("#chat-form");if(form)form.addEventListener("submit",e=>{e.preventDefault();const i=document.querySelector("#chat-input");sendChat(i.value);i.value="";});
   const input=document.querySelector("#chat-input");if(input)input.addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();document.querySelector("#chat-form").requestSubmit();}});
+  const authForm=document.querySelector("#auth-form");
+  if(authForm)authForm.addEventListener("submit",async e=>{e.preventDefault();await submitAuth(document.querySelector("#auth-form").dataset.mode||"register");});
+  document.querySelectorAll("[data-auth-tab]").forEach(el=>el.addEventListener("click",()=>{document.querySelectorAll("[data-auth-tab]").forEach(x=>x.classList.remove("active"));el.classList.add("active");const mode=el.dataset.authTab;const name=document.querySelector("#auth-name");const submit=document.querySelector("#auth-form button");if(mode==="login"){name.style.display="none";name.required=false;document.querySelector("#auth-form").dataset.mode="login";submit.textContent="Sign in to AELIA →";document.querySelector("#auth-password").autocomplete="current-password";}else{name.style.display="";name.required=true;document.querySelector("#auth-form").dataset.mode="register";submit.textContent="Create my AELIA account →";document.querySelector("#auth-password").autocomplete="new-password";}}));
   const files=document.querySelector("#file-input");if(files)files.addEventListener("change",()=>{[...files.files].forEach(f=>state.files.push({name:f.name,size:f.size,type:f.type}));persist();toast(files.files.length+" file(s) added to the local workspace");render();});
 }
 function actions(action,data){
+  if(action==="logout"){AELIA.token="";AELIA.user=null;localStorage.removeItem("aelia_token");localStorage.removeItem("aelia_user");toast("Signed out of AELIA.");setView("account");return;}
+  if(action==="refresh-account"){loadCurrentUser();return;}
   if(action==="new-chat"){state.conversations.unshift({id:crypto.randomUUID(),title:"New conversation",messages:[]});persist();setView("chat");return;}
   if(action==="clear-chat"){activeConv().messages=[];persist();render();return;}
   if(action==="toggle-sidebar"){document.querySelector(".sidebar").classList.toggle("open");return;}
@@ -270,3 +290,29 @@ async function checkApi(){
 }
 window.addEventListener("keydown",e=>{if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==="k"){e.preventDefault();showCommandPalette();}});
 setView("home");checkApi();
+
+async function submitAuth(mode){
+  const status=document.querySelector("#auth-status");
+  const name=document.querySelector("#auth-name")?.value.trim()||"";
+  const email=document.querySelector("#auth-email")?.value.trim()||"";
+  const password=document.querySelector("#auth-password")?.value||"";
+  if(status)status.textContent=mode==="login"?"Signing in…":"Creating your AELIA account…";
+  try{
+    const base=(AELIA.apiBase||"").replace(/\/$/,"");
+    const res=await fetch(base+"/v1/auth/"+mode,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(mode==="register"?{name,email,password}:{email,password})});
+    const data=await res.json();
+    if(!res.ok)throw new Error(data.error||data.message||"Authentication failed");
+    AELIA.token=data.token;AELIA.user=data.user;
+    localStorage.setItem("aelia_token",AELIA.token);localStorage.setItem("aelia_user",JSON.stringify(AELIA.user));
+    toast("AELIA account ready.");setView("account");
+  }catch(e){if(status)status.textContent=e.message;toast("Account request failed.");}
+}
+async function loadCurrentUser(){
+  if(!AELIA.token){setView("account");return;}
+  try{
+    const base=(AELIA.apiBase||"").replace(/\/$/,"");
+    const res=await fetch(base+"/v1/auth/me",{headers:{Authorization:"Bearer "+AELIA.token}});
+    if(!res.ok)throw new Error("Session expired");
+    const data=await res.json();AELIA.user=data.user;localStorage.setItem("aelia_user",JSON.stringify(AELIA.user));render();toast("Account refreshed.");
+  }catch(e){AELIA.token="";AELIA.user=null;localStorage.removeItem("aelia_token");localStorage.removeItem("aelia_user");render();toast("Please sign in again.");}
+}
