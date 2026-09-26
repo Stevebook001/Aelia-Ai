@@ -315,7 +315,7 @@ async function submitAuth(mode){
     const base=(AELIA.apiBase||"").replace(/\/$/,"");
     const res=await fetch(base+"/v1/auth/"+mode,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(mode==="register"?{name,email,password}:{email,password})});
     const data=await res.json();
-    if(!res.ok)throw new Error(data.error||data.message||"Authentication failed");
+    if(!res.ok){const err=new Error(data.error||data.message||"Authentication failed");err.code=data.code;throw err;}
     AELIA.token=data.token;AELIA.user=data.user;
     localStorage.setItem("aelia_token",AELIA.token);localStorage.setItem("aelia_user",JSON.stringify(AELIA.user));
     toast("AELIA account ready.");setView("account");
