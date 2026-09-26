@@ -179,9 +179,9 @@ account:()=>`
   }`,
 settings:()=>`
   <div class="page-head"><div><h1>Settings</h1><p>Workspace configuration. Production identity and billing will move server-side.</p></div></div>
-  <div class="panel"><h3>AELIA identity</h3><p>Official product mail should use the aeliaai.org domain.</p><div class="form-grid"><div class="field"><label>Display name</label><input value="Ibrahim Akanni Ahmad" id="display-name"></div><div class="field"><label>Primary product email</label><input value="hello@aeliaai.org" id="product-email"></div></div></div>
+  <div class="panel"><h3>AELIA identity</h3><p>Official product mail uses the current public domain aeliaai.org.ng.</p><div class="form-grid"><div class="field"><label>Display name</label><input value="Ibrahim Akanni Ahmad" id="display-name"></div><div class="field"><label>Primary product email</label><input value="hello@aeliaai.org" id="product-email"></div></div></div>
   <div class="panel"><h3>AI connection</h3><p>The browser never receives a provider secret. Configure the API server environment instead.</p><div class="form-grid"><div class="field"><label>API base URL</label><input value="${esc(AELIA.apiBase)}" id="api-base"></div><div class="field"><label>Model</label><input value="${esc(AELIA.model)}" id="model-name"></div></div><div class="actions"><button class="btn primary" data-action="save-settings">Save settings</button></div></div>
-  <div class="panel"><h3>Official email aliases</h3><p>hello@aeliaai.org · support@aeliaai.org · security@aeliaai.org · privacy@aeliaai.org · developers@aeliaai.org · billing@aeliaai.org · partnerships@aeliaai.org · no-reply@aeliaai.org</p></div>
+  <div class="panel"><h3>Official email aliases</h3><p>hello@aeliaai.org.ng · support@aeliaai.org.ng · admin@aeliaai.org.ng · security@aeliaai.org.ng · billing@aeliaai.org.ng · developers@aeliaai.org.ng · blogs@aeliaai.org.ng · no-reply@aeliaai.org.ng</p></div>
   <div class="panel"><h3>Security</h3><p>Never paste API keys, SMTP passwords or payment secrets into GitHub source code. Put secrets in Vercel/Coolify environment variables.</p></div>
 `
 };
@@ -210,7 +210,7 @@ function bind(){
   const files=document.querySelector("#file-input");if(files)files.addEventListener("change",()=>{[...files.files].forEach(f=>state.files.push({name:f.name,size:f.size,type:f.type}));persist();toast(files.files.length+" file(s) added to the local workspace");render();});
 }
 function actions(action,data){
-  if(action==="logout"){AELIA.token="";AELIA.user=null;localStorage.removeItem("aelia_token");localStorage.removeItem("aelia_user");toast("Signed out of AELIA.");setView("account");return;}
+  if(action==="verify-email"){verifyEmail();return;}\n  if(action==="logout"){AELIA.token="";AELIA.user=null;localStorage.removeItem("aelia_token");localStorage.removeItem("aelia_user");toast("Signed out of AELIA.");setView("account");return;}
   if(action==="refresh-account"){loadCurrentUser();return;}
   if(action==="new-chat"){state.conversations.unshift({id:crypto.randomUUID(),title:"New conversation",messages:[]});persist();setView("chat");return;}
   if(action==="clear-chat"){activeConv().messages=[];persist();render();return;}
@@ -290,6 +290,20 @@ async function checkApi(){
 }
 window.addEventListener("keydown",e=>{if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==="k"){e.preventDefault();showCommandPalette();}});
 setView("home");checkApi();
+async function verifyEmail(){
+  const status=document.querySelector("#verify-status"); if(status)status.textContent="Verifying your AELIA email…";
+  const token=new URLSearchParams(location.search).get("token");
+  if(!token){if(status)status.textContent="This verification link is missing its token.";return;}
+  try{
+    const base=(AELIA.apiBase||"").replace(/\\/$/,"");
+    const res=await fetch(base+"/v1/auth/verify-email",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({token})});
+    const data=await res.json(); if(!res.ok)throw new Error(data.error||"Verification failed");
+    AELIA.token=data.token;AELIA.user=data.user;localStorage.setItem("aelia_token",AELIA.token);localStorage.setItem("aelia_user",JSON.stringify(AELIA.user));
+    if(status)status.textContent="Your email is verified. Your AELIA account is now active.";
+    toast("Email verified successfully.");
+  }catch(e){if(status)status.textContent=e.message;toast("Email verification failed.");}
+}
+if(location.pathname==="/verify-email"){setView("verify");verifyEmail();}
 
 async function submitAuth(mode){
   const status=document.querySelector("#auth-status");
@@ -305,7 +319,11 @@ async function submitAuth(mode){
     AELIA.token=data.token;AELIA.user=data.user;
     localStorage.setItem("aelia_token",AELIA.token);localStorage.setItem("aelia_user",JSON.stringify(AELIA.user));
     toast("AELIA account ready.");setView("account");
-  }catch(e){if(status)status.textContent=e.message;toast("Account request failed.");}
+  }catch(e){
+    if(status)status.textContent=e.message;
+    if(e.code==="EMAIL_UNVERIFIED"){toast("Please verify your email first.");setTimeout(()=>setView("account"),250);}
+    else toast("Account request failed.");
+  }
 }
 async function loadCurrentUser(){
   if(!AELIA.token){setView("account");return;}
