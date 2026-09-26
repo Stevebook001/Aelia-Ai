@@ -100,9 +100,9 @@ const server=http.createServer(async(req,res)=>{
     }
     if(req.method==="POST"&&url.pathname==="/v1/auth/verify-email"){
       const p=await body(req),raw=String(p.token||"");if(!db||!raw)return send(res,400,{error:"Verification token is required."});
-      const hash=crypto.createHash("sha256").update(raw).digest("hex"),r=await db.query("SELECT t.id,t.user_id,u.id,u.name,u.email,u.email_verified_at FROM aelia_email_tokens t JOIN aelia_users u ON u.id=t.user_id WHERE t.token_hash=$1 AND t.purpose='verify' AND t.used_at IS NULL AND t.expires_at>now()",[hash]);
+      const hash=crypto.createHash("sha256").update(raw).digest("hex"),r=await db.query("SELECT t.id AS token_id,t.user_id,u.id AS user_id,u.name,u.email,u.email_verified_at FROM aelia_email_tokens t JOIN aelia_users u ON u.id=t.user_id WHERE t.token_hash=$1 AND t.purpose='verify' AND t.used_at IS NULL AND t.expires_at>now()",[hash]);
       if(!r.rowCount)return send(res,400,{error:"Verification link is invalid or expired."});
-      const u=r.rows[0];await db.query("UPDATE aelia_email_tokens SET used_at=now() WHERE id=$1",[u.id]);await db.query("UPDATE aelia_users SET email_verified_at=now() WHERE id=$1",[u.user_id]);
+      const u=r.rows[0];await db.query("UPDATE aelia_email_tokens SET used_at=now() WHERE id=$1",[u.token_id]);await db.query("UPDATE aelia_users SET email_verified_at=now() WHERE id=$1",[u.user_id]);
       const user={id:u.user_id,name:u.name,email:u.email,email_verified_at:new Date().toISOString()};send(res,200,{verified:true,token:tokenFor(user),user});return;
     }
     if(req.method==="POST"&&url.pathname==="/v1/auth/resend-verification"){
