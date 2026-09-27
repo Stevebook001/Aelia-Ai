@@ -82,7 +82,7 @@ async function runAgent(payload){
 }
 function capabilities(){return ["chat","reason","memory","search","research","browser","files","documents","data-analysis","code","images","audio","video","translation","agents","multi-agent","projects","workflows","automation","scheduling","connectors","mcp","api","sdk","webhooks","audit","verification"];}
 
-const server=http.createServer(async(req,res)=>{
+const requestHandler=async(req,res)=>{
   if(req.method==="OPTIONS"){send(res,204,{});return;}
   try{
     const url=new URL(req.url||"/","http://aelia.local");
@@ -129,5 +129,19 @@ const server=http.createServer(async(req,res)=>{
     if(req.method==="POST"&&url.pathname==="/v1/research"){const p=await body(req);send(res,202,{accepted:true,task_id:crypto.randomUUID(),status:"queued",type:"research",query:p.query||""});return;}
     send(res,404,{error:"Not found"});
   }catch(err){console.error(err);send(res,500,{error:"AELIA API error",message:process.env.NODE_ENV==="production"?"Request failed":err.message});}
-});
-initDb().then(()=>server.listen(PORT,()=>console.log("AELIA API listening on :"+PORT))).catch(err=>{console.error("Database initialization failed",err);server.listen(PORT,()=>console.log("AELIA API listening on :"+PORT+" (database unavailable)"));});
+};
+
+let initialized;
+async function ensureInitialized(){
+  if(!initialized) initialized=initDb().catch(err=>{console.error("Database initialization failed",err);});
+  await initialized;
+}
+
+export default async function handler(req,res){
+  await ensureInitialized();
+  return requestHandler(req,res);
+}
+
+if(!process.env.VERCEL){
+  ensureInitialized().then(()=>http.createServer(requestHandler).listen(PORT,()=>console.log("AELIA API listening on :"+PORT)));
+}
