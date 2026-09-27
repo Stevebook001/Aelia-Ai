@@ -48,3 +48,22 @@ button,input,textarea,select{font:inherit}button{cursor:pointer}a{color:inherit;
 .account-chip small{display:block;color:var(--muted)}
 .bright-orb{position:absolute;width:220px;height:220px;border-radius:50%;right:-40px;bottom:-90px;background:radial-gradient(circle,#00d8ff33,transparent 68%);filter:blur(8px);animation:aeliaOrb 6s ease-in-out infinite}
 @keyframes aeliaOrb{50%{transform:translate(-30px,-20px) scale(1.15);opacity:.7}}
+
+#aelia-boot{position:fixed;inset:0;z-index:9999;display:grid;place-items:center;background:radial-gradient(circle at 50% 38%,rgba(0,216,255,.16),transparent 30%),linear-gradient(135deg,#f9fdff,#eef7ff 48%,#f6f1ff);animation:bootIn .35s ease}
+.boot-shell{text-align:center;width:min(560px,calc(100% - 32px));padding:42px 28px;border:1px solid rgba(0,180,230,.24);border-radius:30px;background:rgba(255,255,255,.72);backdrop-filter:blur(28px);box-shadow:0 30px 100px rgba(28,103,145,.18)}
+.boot-mark{position:relative;margin:0 auto 18px;width:82px;height:82px;border-radius:27px;display:grid;place-items:center;background:rgba(255,255,255,.86);border:1px solid rgba(0,169,232,.28);box-shadow:0 0 60px rgba(0,216,255,.25)}
+.boot-core{font-size:42px;font-weight:950;background:linear-gradient(135deg,#00c8ff,#725cff 60%,#ffbd35);-webkit-background-clip:text;background-clip:text;color:transparent;animation:aeliaGlow 1.7s ease-in-out infinite}
+.boot-orbit{position:absolute;inset:8px;border:2px solid rgba(0,200,255,.55);border-top-color:#ffbd35;border-radius:50%;animation:aeliaOrbit 1.5s linear infinite}
+.boot-orbit:after{content:"";position:absolute;width:8px;height:8px;border-radius:50%;right:-3px;top:12px;background:#00c8ff;box-shadow:0 0 18px #00c8ff}
+.boot-kicker{font-size:10px;letter-spacing:.22em;font-weight:900;color:#0088b7}
+.boot-shell h2{margin:7px 0 5px;font-size:27px;letter-spacing:-.03em}
+.boot-shell p{margin:0;color:#63758a;font-size:13px}
+.boot-track{height:5px;margin:23px auto 15px;max-width:380px;border-radius:99px;background:#dcecf4;overflow:hidden}
+.boot-track span{display:block;width:35%;height:100%;border-radius:99px;background:linear-gradient(90deg,#00d8ff,#8a6cff,#ffb52e);animation:bootProgress 3.1s ease-in-out forwards}
+.boot-steps{display:flex;justify-content:center;flex-wrap:wrap;gap:8px;margin-bottom:20px}
+.boot-steps span{font-size:9px;padding:5px 8px;border:1px solid #dceaf4;border-radius:99px;color:#91a0ad;transition:.25s}
+.boot-steps span.live{color:#008db9;border-color:#67dafa;background:#e8fbff;box-shadow:0 0 18px #00d8ff22}
+#aelia-boot.leave{animation:bootOut .5s ease forwards}
+@keyframes bootProgress{from{transform:translateX(-110%);width:35%}to{transform:translateX(285%);width:45%}}
+@keyframes bootIn{from{opacity:0}to{opacity:1}}@keyframes bootOut{to{opacity:0;transform:scale(1.04);filter:blur(8px)}}
+@media(prefers-reduced-motion:reduce){#aelia-boot *{animation:none!important}}
