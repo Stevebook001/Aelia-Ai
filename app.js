@@ -35,7 +35,7 @@ const state=saved||{
 };
 
 function persist(){localStorage.setItem(AELIA.storageKey,JSON.stringify(state));}
-function esc(s){return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",""":"&quot;","'":"&#039;"}[c]));}
+function esc(s){return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#039;"}[c]));}
 function toast(msg){const el=document.querySelector("#toast");el.textContent=msg;el.classList.add("show");clearTimeout(window.__toast);window.__toast=setTimeout(()=>el.classList.remove("show"),2600);}
 function activeConv(){return state.conversations[0];}
 function setView(view){state.view=view;document.querySelectorAll(".nav-item").forEach(x=>x.classList.toggle("active",x.dataset.view===view));const labels={home:"Today",chat:"Chat & Reason",agents:"AELIA Agents",research:"Research",create:"Create",projects:"Projects",files:"Files & Knowledge",workflows:"Automations",connectors:"Connectors",channels:"Channels",developers:"Developers",settings:"Settings"};document.querySelector("#crumb").textContent=labels[view]||"AELIA";render();}
@@ -334,3 +334,19 @@ async function loadCurrentUser(){
     const data=await res.json();AELIA.user=data.user;localStorage.setItem("aelia_user",JSON.stringify(AELIA.user));render();toast("Account refreshed.");
   }catch(e){AELIA.token="";AELIA.user=null;localStorage.removeItem("aelia_token");localStorage.removeItem("aelia_user");render();toast("Please sign in again.");}
 }
+
+function startAeliaExperience(){
+  if(sessionStorage.getItem("aelia_boot_seen")) return;
+  sessionStorage.setItem("aelia_boot_seen","1");
+  const boot=document.createElement("div");
+  boot.id="aelia-boot";
+  boot.innerHTML='<div class="boot-shell"><div class="boot-mark"><span class="boot-orbit"></span><span class="boot-core">A</span></div><div class="boot-kicker">AELIA AI</div><h2>Light. Intelligence. Yours.</h2><p id="boot-status">Waking your workspace…</p><div class="boot-track"><span></span></div><div class="boot-steps"><span data-step="1">Identity</span><span data-step="2">Workspace</span><span data-step="3">Intelligence</span><span data-step="4">Connectors</span></div><button class="btn primary" id="boot-enter" style="display:none">Enter AELIA →</button></div>';
+  document.body.appendChild(boot);
+  const status=boot.querySelector("#boot-status");
+  const steps=[["1","Checking secure identity layer…"],["2","Preparing your AI workspace…"],["3","Warming reasoning and agent runtime…"],["4","Loading connector-ready capabilities…"],["5","AELIA is ready."]];
+  let i=0;
+  const tick=()=>{if(i<steps.length){status.textContent=steps[i][1];boot.querySelectorAll("[data-step]").forEach(x=>x.classList.toggle("live",x.dataset.step===steps[i][0]));i++;setTimeout(tick,650)}else{status.textContent="Your workspace is ready.";boot.querySelector("#boot-enter").style.display="inline-flex";}};
+  boot.querySelector("#boot-enter").addEventListener("click",()=>{boot.classList.add("leave");setTimeout(()=>boot.remove(),500)});
+  tick();
+}
+startAeliaExperience();
