@@ -210,7 +210,8 @@ function bind(){
   const files=document.querySelector("#file-input");if(files)files.addEventListener("change",()=>{[...files.files].forEach(f=>state.files.push({name:f.name,size:f.size,type:f.type}));persist();toast(files.files.length+" file(s) added to the local workspace");render();});
 }
 function actions(action,data){
-  if(action==="verify-email"){verifyEmail();return;}\n  if(action==="logout"){AELIA.token="";AELIA.user=null;localStorage.removeItem("aelia_token");localStorage.removeItem("aelia_user");toast("Signed out of AELIA.");setView("account");return;}
+  if(action==="verify-email"){verifyEmail();return;}
+  if(action==="logout"){AELIA.token="";AELIA.user=null;localStorage.removeItem("aelia_token");localStorage.removeItem("aelia_user");toast("Signed out of AELIA.");setView("account");return;}
   if(action==="refresh-account"){loadCurrentUser();return;}
   if(action==="new-chat"){state.conversations.unshift({id:crypto.randomUUID(),title:"New conversation",messages:[]});persist();setView("chat");return;}
   if(action==="clear-chat"){activeConv().messages=[];persist();render();return;}
@@ -232,7 +233,7 @@ function actions(action,data){
     const task=prompt("What should "+a.name+" do?");
     if(!task)return;
     toast("Sending task to "+a.name+"…");
-    fetch((AELIA.apiBase||"").replace(/\\/$/,"")+"/v1/agents/run",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({agent:a.id,task,model:AELIA.model})})
+    fetch((AELIA.apiBase||"").replace(/\/$/,"")+"/v1/agents/run",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({agent:a.id,task,model:AELIA.model})})
       .then(r=>r.json())
       .then(d=>{
         const output=d.output||d.message||"Agent task accepted.";
@@ -295,7 +296,7 @@ async function verifyEmail(){
   const token=new URLSearchParams(location.search).get("token");
   if(!token){if(status)status.textContent="This verification link is missing its token.";return;}
   try{
-    const base=(AELIA.apiBase||"").replace(/\\/$/,"");
+    const base=(AELIA.apiBase||"").replace(/\/$/,"");
     const res=await fetch(base+"/v1/auth/verify-email",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({token})});
     const data=await res.json(); if(!res.ok)throw new Error(data.error||"Verification failed");
     AELIA.token=data.token;AELIA.user=data.user;localStorage.setItem("aelia_token",AELIA.token);localStorage.setItem("aelia_user",JSON.stringify(AELIA.user));
