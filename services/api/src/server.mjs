@@ -86,6 +86,7 @@ const requestHandler=async(req,res)=>{
   if(req.method==="OPTIONS"){send(res,204,{});return;}
   try{
     const url=new URL(req.url||"/","http://aelia.local");
+    if(url.pathname.startsWith("/api/")) url.pathname=url.pathname.slice(4);
     if(req.method==="POST"&&url.pathname==="/v1/auth/register"){
       const p=await body(req),name=String(p.name||"").trim(),email=String(p.email||"").trim().toLowerCase(),password=String(p.password||"");
       if(!db)return send(res,503,{error:"Account database is not configured yet."});
