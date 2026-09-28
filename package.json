@@ -1,5 +1,14 @@
 {
   "name": "aeliaai-web",
   "private": true,
-  "version": "1.0.0"
+  "version": "1.0.0",
+  "type": "commonjs",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "openai": "^6.0.0",
+    "pg": "^8.16.3",
+    "bcryptjs": "^3.0.2",
+    "jsonwebtoken": "^9.0.2"
+  }
 }
