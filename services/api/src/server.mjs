@@ -17,6 +17,7 @@ const JWT_SECRET=process.env.JWT_SECRET||"";
 const PUBLIC_APP_URL=(process.env.PUBLIC_APP_URL||"https://aeliaai.org.ng").replace(/\/$/,"");
 const MAIL_FROM=process.env.MAIL_FROM||"AELIA AI <no-reply@aeliaai.org.ng>";
 const RESEND_API_KEY=process.env.RESEND_API_KEY||"";
+const ADMIN_EMAIL=process.env.ADMIN_EMAIL||"";
 const db=DATABASE_URL?new Pool({connectionString:DATABASE_URL,ssl:!DATABASE_URL.includes("localhost")&&!DATABASE_URL.includes("127.0.0.1")?{rejectUnauthorized:false}:undefined}):null;
 const client=AI_API_KEY?new OpenAI({apiKey:AI_API_KEY,...(AI_BASE_URL?{baseURL:AI_BASE_URL}:{})}):null;
 
@@ -128,6 +129,22 @@ const requestHandler=async(req,res)=>{
     if(req.method==="POST"&&url.pathname==="/v1/agents/run"){const result=await runAgent(await body(req));send(res,result.mode==="live"?200:202,result);return;}
     if(req.method==="POST"&&url.pathname==="/v1/tasks"){const p=await body(req);send(res,202,{accepted:true,task_id:crypto.randomUUID(),status:"queued",type:p.type||"general"});return;}
     if(req.method==="POST"&&url.pathname==="/v1/research"){const p=await body(req);send(res,202,{accepted:true,task_id:crypto.randomUUID(),status:"queued",type:"research",query:p.query||""});return;}
+    if(req.method==="POST"&&url.pathname==="/v1/feedback"){
+      const p=await body(req),name=String(p.name||"").trim(),email=String(p.email||"").trim().toLowerCase(),type=String(p.type||"Other").trim(),page=String(p.page||"").trim(),message=String(p.message||"").trim();
+      if(!db)return send(res,503,{error:"Feedback database is not configured yet."});
+      if(name.length<2||!email||message.length<3)return send(res,400,{error:"Name, email and message are required."});
+      const r=await db.query("INSERT INTO aelia_feedback(name,email,type,page,message) VALUES($1,$2,$3,$4,$5) RETURNING id,created_at",[name,email,type,page,message]);
+      if(ADMIN_EMAIL&&RESEND_API_KEY){try{await sendEmail(ADMIN_EMAIL,"New AELIA feedback: "+type,`<h2>New AELIA feedback</h2><p><b>From:</b> ${name} (${email})</p><p><b>Page:</b> ${page}</p><p><b>Type:</b> ${type}</p><p>${message.replace(/</g,"&lt;").replace(/>/g,"&gt;")}</p>`);}catch(e){console.error("feedback email failed",e.message);}}
+      send(res,201,{ok:true,id:r.rows[0].id});return;
+    }
+    if(req.method==="POST"&&url.pathname==="/v1/blog-submissions"){
+      const p=await body(req),author=String(p.author||"").trim(),email=String(p.email||"").trim().toLowerCase(),title=String(p.title||"").trim(),category=String(p.category||"AI").trim(),image_url=String(p.image_url||"").trim(),content=String(p.content||"").trim();
+      if(!db)return send(res,503,{error:"Blog submission database is not configured yet."});
+      if(author.length<2||!email||title.length<5||content.length<100)return send(res,400,{error:"Author, email, title and a substantive article are required."});
+      const r=await db.query("INSERT INTO aelia_blog_submissions(author,email,title,category,image_url,content) VALUES($1,$2,$3,$4,$5,$6) RETURNING id,created_at",[author,email,title,category,image_url,content]);
+      if(ADMIN_EMAIL&&RESEND_API_KEY){try{await sendEmail(ADMIN_EMAIL,"AELIA blog submission: "+title,`<h2>New blog submission</h2><p><b>Author:</b> ${author} (${email})</p><p><b>Category:</b> ${category}</p><p><b>Title:</b> ${title}</p><p>A submission is waiting for AELIA review. Review it in the admin workflow.</p>`);}catch(e){console.error("blog submission email failed",e.message);}}
+      send(res,201,{ok:true,id:r.rows[0].id,status:"pending_review",review_window:"2-5 working days"});return;
+    }
     send(res,404,{error:"Not found"});
   }catch(err){console.error(err);send(res,500,{error:"AELIA API error",message:process.env.NODE_ENV==="production"?"Request failed":err.message});}
 };
