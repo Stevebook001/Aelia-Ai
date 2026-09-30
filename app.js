@@ -34,7 +34,7 @@ const state=saved||{
   memories:[]
 };
 
-function persist(){localStorage.setItem(AELIA.storageKey,JSON.stringify(state));}
+function persist(){localStorage.setItem(AELIA.storageKey,JSON.stringify(state));} function save(){persist();}
 function esc(s){return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#039;"}[c]));}
 function toast(msg){const el=document.querySelector("#toast");el.textContent=msg;el.classList.add("show");clearTimeout(window.__toast);window.__toast=setTimeout(()=>el.classList.remove("show"),2600);}
 function activeConv(){return state.conversations[0];}
@@ -205,6 +205,8 @@ function bind(){
 }
 function actions(action,data){
   if(action==="verify-email"){verifyEmail();return;}
+  if(action==="read-blog"){toast("AELIA article reader is being connected to the publishing CMS.");return;}
+  if(action==="doc-jump"){document.getElementById(data.target)?.scrollIntoView({behavior:"smooth"});return;}
   if(action==="logout"){AELIA.token="";AELIA.user=null;localStorage.removeItem("aelia_token");localStorage.removeItem("aelia_user");toast("Signed out of AELIA.");setView("account");return;}
   if(action==="refresh-account"){loadCurrentUser();return;}
   if(action==="new-chat"){state.conversations.unshift({id:crypto.randomUUID(),title:"New conversation",messages:[]});persist();setView("chat");return;}
