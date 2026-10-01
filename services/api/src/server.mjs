@@ -48,6 +48,37 @@ async function initDb(){
     created_at TIMESTAMPTZ NOT NULL DEFAULT now()
   )`);
   await db.query(`CREATE INDEX IF NOT EXISTS aelia_email_tokens_lookup ON aelia_email_tokens(token_hash,purpose,expires_at)`);
+  await db.query(`CREATE TABLE IF NOT EXISTS aelia_feedback (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name TEXT NOT NULL,
+    email TEXT NOT NULL,
+    type TEXT NOT NULL DEFAULT 'Other',
+    page TEXT NOT NULL DEFAULT '',
+    message TEXT NOT NULL,
+    status TEXT NOT NULL DEFAULT 'new',
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+  )`);
+  await db.query(`CREATE TABLE IF NOT EXISTS aelia_blog_submissions (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    author TEXT NOT NULL,
+    email TEXT NOT NULL,
+    title TEXT NOT NULL,
+    category TEXT NOT NULL DEFAULT 'AI',
+    image_url TEXT NOT NULL DEFAULT '',
+    content TEXT NOT NULL,
+    status TEXT NOT NULL DEFAULT 'pending_review',
+    reviewer_email TEXT NULL,
+    review_note TEXT NULL,
+    reviewed_at TIMESTAMPTZ NULL,
+    published_at TIMESTAMPTZ NULL,
+    slug TEXT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+  )`);
+  await db.query(`ALTER TABLE aelia_blog_submissions ADD COLUMN IF NOT EXISTS reviewer_email TEXT NULL`);
+  await db.query(`ALTER TABLE aelia_blog_submissions ADD COLUMN IF NOT EXISTS review_note TEXT NULL`);
+  await db.query(`ALTER TABLE aelia_blog_submissions ADD COLUMN IF NOT EXISTS reviewed_at TIMESTAMPTZ NULL`);
+  await db.query(`ALTER TABLE aelia_blog_submissions ADD COLUMN IF NOT EXISTS published_at TIMESTAMPTZ NULL`);
+  await db.query(`ALTER TABLE aelia_blog_submissions ADD COLUMN IF NOT EXISTS slug TEXT NULL`);
 }
 function tokenFor(user){if(!JWT_SECRET)throw new Error("JWT_SECRET is not configured");return jwt.sign({sub:user.id,email:user.email},JWT_SECRET,{expiresIn:"30d"});}
 async function authUser(req){const h=req.headers.authorization||"";if(!h.startsWith("Bearer ")||!JWT_SECRET)return null;try{const p=jwt.verify(h.slice(7),JWT_SECRET);if(!db)return null;const r=await db.query("SELECT id,name,email,email_verified_at,created_at FROM aelia_users WHERE id=$1",[p.sub]);return r.rows[0]||null;}catch{return null;}}
@@ -144,6 +175,38 @@ const requestHandler=async(req,res)=>{
       const r=await db.query("INSERT INTO aelia_blog_submissions(author,email,title,category,image_url,content) VALUES($1,$2,$3,$4,$5,$6) RETURNING id,created_at",[author,email,title,category,image_url,content]);
       if(ADMIN_EMAIL&&RESEND_API_KEY){try{await sendEmail(ADMIN_EMAIL,"AELIA blog submission: "+title,`<h2>New blog submission</h2><p><b>Author:</b> ${author} (${email})</p><p><b>Category:</b> ${category}</p><p><b>Title:</b> ${title}</p><p>A submission is waiting for AELIA review. Review it in the admin workflow.</p>`);}catch(e){console.error("blog submission email failed",e.message);}}
       send(res,201,{ok:true,id:r.rows[0].id,status:"pending_review",review_window:"2-5 working days"});return;
+    }
+    if(req.method==="GET"&&url.pathname==="/v1/blogs"){
+      if(!db)return send(res,503,{error:"Blog database is not configured yet."});
+      const r=await db.query("SELECT id,author,title,category,image_url,content,slug,published_at FROM aelia_blog_submissions WHERE status='published' ORDER BY published_at DESC NULLS LAST, created_at DESC");
+      send(res,200,{blogs:r.rows});return;
+    }
+    if(url.pathname.startsWith("/v1/admin/")){
+      const admin=await authUser(req);
+      if(!admin)return send(res,401,{error:"Admin authentication required."});
+      if(!ADMIN_EMAIL||admin.email.toLowerCase()!==ADMIN_EMAIL.toLowerCase())return send(res,403,{error:"Admin access denied."});
+      if(req.method==="GET"&&url.pathname==="/v1/admin/feedback"){
+        if(!db)return send(res,503,{error:"Database is not configured."});
+        const r=await db.query("SELECT * FROM aelia_feedback ORDER BY created_at DESC LIMIT 200");
+        send(res,200,{items:r.rows});return;
+      }
+      if(req.method==="GET"&&url.pathname==="/v1/admin/blog-submissions"){
+        if(!db)return send(res,503,{error:"Database is not configured."});
+        const r=await db.query("SELECT * FROM aelia_blog_submissions ORDER BY created_at DESC LIMIT 200");
+        send(res,200,{items:r.rows});return;
+      }
+      const m=url.pathname.match(/^\/v1\/admin\/blog-submissions\/([^/]+)\/review$/);
+      if(req.method==="POST"&&m){
+        if(!db)return send(res,503,{error:"Database is not configured."});
+        const p=await body(req),status=String(p.status||"").trim(),note=String(p.note||"").trim(),allowed=["pending_review","changes_requested","approved","rejected","published"];
+        if(!allowed.includes(status))return send(res,400,{error:"Invalid review status."});
+        const publish=status==="published"||status==="approved";
+        const slug=String(p.slug||"").trim()||crypto.randomUUID();
+        const r=await db.query("UPDATE aelia_blog_submissions SET status=$1,reviewer_email=$2,review_note=$3,reviewed_at=now(),published_at=CASE WHEN $4 THEN COALESCE(published_at,now()) ELSE published_at END,slug=CASE WHEN $4 THEN COALESCE(slug,$5) ELSE slug END WHERE id=$6 RETURNING *",[publish?"published":status,admin.email,note,publish,slug,m[1]]);
+        if(!r.rowCount)return send(res,404,{error:"Submission not found."});
+        send(res,200,{ok:true,item:r.rows[0]});return;
+      }
+      return send(res,404,{error:"Admin route not found."});
     }
     send(res,404,{error:"Not found"});
   }catch(err){console.error(err);send(res,500,{error:"AELIA API error",message:process.env.NODE_ENV==="production"?"Request failed":err.message});}
