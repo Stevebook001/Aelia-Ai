@@ -1,0 +1,15 @@
+{
+  "name": "AELIA AI",
+  "short_name": "AELIA",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#00e5ff",
+  "icons": [
+    {
+      "src": "/aelia-mark.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}
