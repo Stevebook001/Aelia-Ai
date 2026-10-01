@@ -100,3 +100,24 @@ if(!state.articleSlug)state.articleSlug=AELIA_BLOGS[0].slug;
 
 const sharedArticle=new URLSearchParams(location.search).get("article");
 if(sharedArticle && AELIA_BLOGS.some(x=>x.slug===sharedArticle)){state.articleSlug=sharedArticle;setView("article");}
+
+views.admin=()=>'<section class="public-page"><div class="page-head"><div><span class="eyebrow">ADMIN CONSOLE</span><h1>Editorial and feedback operations.</h1><p>Review submissions, publish approved articles and inspect incoming feedback. Admin access is enforced by the API using the configured administrator identity.</p></div><button class="btn" data-view="contact">Contact</button></div><div id="admin-status" class="panel">Loading admin data…</div><div class="contact-grid"><div class="panel"><h3>Blog submissions</h3><div id="admin-blogs"></div></div><div class="panel"><h3>Feedback</h3><div id="admin-feedback"></div></div></div></section>';
+async function loadAdmin(){
+ const token=localStorage.getItem("aelia_token")||"", headers=token?{Authorization:"Bearer "+token}:{};
+ const status=document.querySelector("#admin-status"),blogs=document.querySelector("#admin-blogs"),feedback=document.querySelector("#admin-feedback");
+ try{
+  const [b,f]=await Promise.all([fetch((AELIA.apiBase||"")+ "/v1/admin/blog-submissions",{headers}),fetch((AELIA.apiBase||"")+ "/v1/admin/feedback",{headers})]);
+  if(!b.ok||!f.ok)throw new Error("Admin authentication or API configuration is required.");
+  const bd=await b.json(),fd=await f.json();
+  status.textContent="Admin data loaded.";
+  blogs.innerHTML=(bd.items||[]).map(x=>'<div class="admin-item"><strong>'+esc(x.title)+'</strong><small>'+esc(x.author)+' · '+esc(x.status)+'</small><p>'+esc(x.content.slice(0,220))+'…</p><div class="admin-actions">'+["published","changes_requested","rejected"].map(st=>'<button class="btn" data-review-id="'+x.id+'" data-review-status="'+st+'">'+st.replace("_"," ")+'</button>').join("")+'</div></div>').join("")||"<p>No submissions.</p>";
+  feedback.innerHTML=(fd.items||[]).map(x=>'<div class="admin-item"><strong>'+esc(x.type)+'</strong><small>'+esc(x.name)+' · '+esc(x.email)+'</small><p>'+esc(x.message)+'</p></div>').join("")||"<p>No feedback.</p>";
+ }catch(e){status.textContent=e.message||"Could not load admin data.";}
+}
+document.addEventListener("click",async e=>{
+ const b=e.target.closest("[data-review-id]"); if(!b)return;
+ const token=localStorage.getItem("aelia_token")||"";
+ try{const r=await fetch((AELIA.apiBase||"")+"/v1/admin/blog-submissions/"+b.dataset.reviewId+"/review",{method:"POST",headers:{"Content-Type":"application/json",Authorization:"Bearer "+token},body:JSON.stringify({status:b.dataset.reviewStatus,note:"Reviewed in AELIA Admin Console."})});const d=await r.json();if(!r.ok)throw new Error(d.error||"Review failed");toast("Submission updated");loadAdmin();}catch(err){toast(err.message||"Review failed");}
+});
+const _renderPublic=render;
+render=function(){_renderPublic();if(state.view==="admin")loadAdmin();};
