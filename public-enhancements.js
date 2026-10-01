@@ -97,3 +97,6 @@ document.addEventListener("submit",async e=>{
 });
 
 if(!state.articleSlug)state.articleSlug=AELIA_BLOGS[0].slug;
+
+const sharedArticle=new URLSearchParams(location.search).get("article");
+if(sharedArticle && AELIA_BLOGS.some(x=>x.slug===sharedArticle)){state.articleSlug=sharedArticle;setView("article");}
