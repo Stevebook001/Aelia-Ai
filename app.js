@@ -48,10 +48,10 @@ home:()=>`
     <button class="oa-brand" data-view="home"><img src="/aelia-mark.svg" alt="AELIA AI"><span>AELIA <b>AI</b></span></button>
     <div class="oa-main-links">
       <button data-view="research">Research</button>
-      <button data-view="products-menu">Products</button>
+      <button data-action="open-public-menu" data-menu="products">Products</button>
       <button data-view="business">Business</button>
       <button data-view="developers">Developers</button>
-      <button data-view="company-menu">Company</button>
+      <button data-action="open-public-menu" data-menu="company">Company</button>
     </div>
     <div class="oa-nav-actions"><button class="oa-search" data-action="command-palette">⌕</button><button class="btn primary" data-view="chat">Try AELIA →</button><button class="nav-signin" data-view="account">Sign in</button><button class="mobile-nav" data-action="toggle-public-menu">☰</button></div>
   </nav>
@@ -269,7 +269,7 @@ function actions(action,data){
   if(action==="refresh-account"){loadCurrentUser();return;}
   if(action==="new-chat"){state.conversations.unshift({id:crypto.randomUUID(),title:"New conversation",messages:[]});persist();setView("chat");return;}
   if(action==="clear-chat"){activeConv().messages=[];persist();render();return;}
-  if(action==="toggle-sidebar"){document.querySelector(".sidebar").classList.toggle("open");return;}
+  if(action==="toggle-sidebar"){document.querySelector(".sidebar").classList.toggle("open");return;}\n  if(action==="toggle-public-menu"){document.querySelector("#public-menu")?.classList.toggle("open");return;}\n  if(action==="open-public-menu"){document.querySelector("#public-menu")?.classList.add("open");return;}
   if(action==="toggle-theme"){AELIA.theme=AELIA.theme==="night"?"bright":"night";localStorage.setItem("aelia_theme",AELIA.theme);render();return;}
   if(action==="command-palette"){showCommandPalette();return;}
   if(action==="quick-chat"){setView("chat");return;}
