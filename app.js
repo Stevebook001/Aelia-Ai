@@ -38,7 +38,14 @@ function persist(){localStorage.setItem(AELIA.storageKey,JSON.stringify(state));
 function esc(s){return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#039;"}[c]));}
 function toast(msg){const el=document.querySelector("#toast");el.textContent=msg;el.classList.add("show");clearTimeout(window.__toast);window.__toast=setTimeout(()=>el.classList.remove("show"),2600);}
 function activeConv(){return state.conversations[0];}
-function setView(view){state.view=view;document.querySelectorAll(".nav-item").forEach(x=>x.classList.toggle("active",x.dataset.view===view));const labels={home:"Today",chat:"Chat & Reason",agents:"AELIA Agents",research:"Research",create:"Create",projects:"Projects",files:"Files & Knowledge",workflows:"Automations",connectors:"Connectors",channels:"Channels",developers:"Developers",settings:"Settings"};document.querySelector("#crumb").textContent=labels[view]||"AELIA";render();}
+const ROUTES={home:"/",chat:"/chat",agents:"/agents",research:"/research",create:"/create",projects:"/projects",files:"/files",workflows:"/automations",connectors:"/connectors",channels:"/channels",developers:"/developers",settings:"/settings",account:"/account",blog:"/blog",about:"/about",contact:"/contact",legal:"/legal",pricing:"/pricing",docs:"/docs",business:"/business",company:"/company",feedback:"/feedback","blog-submit":"/blog-submit",admin:"/admin",verify:"/verify-email"};
+const PATH_TO_VIEW=Object.fromEntries(Object.entries(ROUTES).map(([view,path])=>[path,view]));
+const labels={home:"Today",chat:"Chat & Reason",agents:"AELIA Agents",research:"Research",create:"Create",projects:"Projects",files:"Files & Knowledge",workflows:"Automations",connectors:"Connectors",channels:"Channels",developers:"Developers",settings:"Settings",account:"Account",blog:"Blog",about:"About",contact:"Contact",legal:"Terms & Policies",pricing:"Pricing",docs:"Docs",business:"Business",company:"Company",feedback:"Feedback","blog-submit":"Submit a blog",admin:"Admin",verify:"Verify email"};
+function routeFor(view){return ROUTES[view]||"/";}
+function setView(view,options={}){state.view=view;document.querySelectorAll(".nav-item").forEach(x=>x.classList.toggle("active",x.dataset.view===view));document.querySelector("#crumb").textContent=labels[view]||"AELIA";render();if(options.push!==false){const target=routeFor(view);if(location.pathname!==target)history.pushState({view},"",target);}}
+function viewFromPath(pathname){const clean=pathname.replace(/\\/+$/,"")||"/";return PATH_TO_VIEW[clean]||"home";}
+function syncRoute(){setView(viewFromPath(location.pathname),{push:false});}
+window.addEventListener("popstate",syncRoute);
 function render(){document.body.classList.toggle("night",AELIA.theme==="night");document.body.classList.toggle("public-home",state.view==="home");const root=document.querySelector("#view");root.innerHTML=views[state.view]();bind();if(state.view==="chat")scrollMessages();}
 
 const views={
@@ -344,7 +351,7 @@ async function checkApi(){
   try{const r=await fetch(base+"/health");if(!r.ok)throw 0;const d=await r.json();el.innerHTML="<i></i> AELIA API online";el.classList.add("ok");const mt=document.querySelector("#mode-title"),ms=document.querySelector("#mode-sub");if(mt)mt.textContent=d.mode==="live"?"AELIA live runtime":"AELIA foundation";if(ms)ms.textContent=d.mode==="live"?"AI runtime connected":"API online · provider pending";}catch{el.innerHTML="<i></i> API unavailable";el.classList.remove("ok");}
 }
 window.addEventListener("keydown",e=>{if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==="k"){e.preventDefault();showCommandPalette();}});
-setView("home");checkApi();
+syncRoute();checkApi();
 async function verifyEmail(){
   const status=document.querySelector("#verify-status"); if(status)status.textContent="Verifying your AELIA email…";
   const token=new URLSearchParams(location.search).get("token");
