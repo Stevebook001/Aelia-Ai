@@ -5,6 +5,29 @@
     {"source":"/(.*)","headers":[{"key":"X-Content-Type-Options","value":"nosniff"},{"key":"X-Frame-Options","value":"SAMEORIGIN"},{"key":"Referrer-Policy","value":"strict-origin-when-cross-origin"}]}
   ],
   "rewrites": [
-    {"source":"/(.*)","destination":"/index.html"}
+    {"source":"/chat","destination":"/index.html"},
+    {"source":"/agents","destination":"/index.html"},
+    {"source":"/research","destination":"/index.html"},
+    {"source":"/create","destination":"/index.html"},
+    {"source":"/projects","destination":"/index.html"},
+    {"source":"/files","destination":"/index.html"},
+    {"source":"/automations","destination":"/index.html"},
+    {"source":"/connectors","destination":"/index.html"},
+    {"source":"/channels","destination":"/index.html"},
+    {"source":"/developers","destination":"/index.html"},
+    {"source":"/settings","destination":"/index.html"},
+    {"source":"/account","destination":"/index.html"},
+    {"source":"/blog","destination":"/index.html"},
+    {"source":"/about","destination":"/index.html"},
+    {"source":"/contact","destination":"/index.html"},
+    {"source":"/legal","destination":"/index.html"},
+    {"source":"/pricing","destination":"/index.html"},
+    {"source":"/docs","destination":"/index.html"},
+    {"source":"/business","destination":"/index.html"},
+    {"source":"/company","destination":"/index.html"},
+    {"source":"/feedback","destination":"/index.html"},
+    {"source":"/blog-submit","destination":"/index.html"},
+    {"source":"/admin","destination":"/index.html"},
+    {"source":"/verify-email","destination":"/index.html"}
   ]
 }
