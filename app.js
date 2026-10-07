@@ -43,7 +43,7 @@ const PATH_TO_VIEW=Object.fromEntries(Object.entries(ROUTES).map(([view,path])=>
 const labels={home:"Today",chat:"Chat & Reason",agents:"AELIA Agents",research:"Research",create:"Create",projects:"Projects",files:"Files & Knowledge",workflows:"Automations",connectors:"Connectors",channels:"Channels",developers:"Developers",settings:"Settings",account:"Account",blog:"Blog",about:"About",contact:"Contact",legal:"Terms & Policies",pricing:"Pricing",docs:"Docs",business:"Business",company:"Company",feedback:"Feedback","blog-submit":"Submit a blog",admin:"Admin",verify:"Verify email"};
 function routeFor(view){return ROUTES[view]||"/";}
 function setView(view,options={}){state.view=view;document.querySelectorAll(".nav-item").forEach(x=>x.classList.toggle("active",x.dataset.view===view));document.querySelector("#crumb").textContent=labels[view]||"AELIA";render();if(options.push!==false){const target=routeFor(view);if(location.pathname!==target)history.pushState({view},"",target);}}
-function viewFromPath(pathname){const clean=pathname.replace(/\\/+$/,"")||"/";return PATH_TO_VIEW[clean]||"home";}
+function viewFromPath(pathname){const clean=pathname.replace(/\/+$/,"")||"/";return PATH_TO_VIEW[clean]||"home";}
 function syncRoute(){setView(viewFromPath(location.pathname),{push:false});}
 window.addEventListener("popstate",syncRoute);
 function render(){document.body.classList.toggle("night",AELIA.theme==="night");document.body.classList.toggle("public-home",state.view==="home");const root=document.querySelector("#view");root.innerHTML=views[state.view]();bind();if(state.view==="chat")scrollMessages();}
