@@ -43,7 +43,25 @@ const PATH_TO_VIEW=Object.fromEntries(Object.entries(ROUTES).map(([view,path])=>
 const labels={home:"Today",chat:"Chat & Reason",agents:"AELIA Agents",research:"Research",create:"Create",projects:"Projects",files:"Files & Knowledge",workflows:"Automations",connectors:"Connectors",channels:"Channels",developers:"Developers",settings:"Settings",account:"Account",blog:"Blog",about:"About",contact:"Contact",legal:"Terms & Policies",pricing:"Pricing",docs:"Docs",business:"Business",company:"Company",status:"System Status",feedback:"Feedback","blog-submit":"Submit a blog",admin:"Admin",verify:"Verify email"};
 function routeFor(view){return ROUTES[view]||"/";}
 function setView(view,options={}){state.view=view;document.querySelectorAll(".nav-item").forEach(x=>x.classList.toggle("active",x.dataset.view===view));document.querySelector("#crumb").textContent=labels[view]||"AELIA";render();if(options.push!==false){const target=routeFor(view);if(location.pathname!==target)history.pushState({view},"",target);}}
-function viewFromPath(pathname){const clean=pathname.replace(/\/+$/,"")||"/";return PATH_TO_VIEW[clean]||"home";}
+const HOST_TO_VIEW={
+  "ai.aeliaai.org.ng":"chat",
+  "chat.aeliaai.org.ng":"chat",
+  "business.aeliaai.org.ng":"business",
+  "console.aeliaai.org.ng":"admin",
+  "tools.aeliaai.org.ng":"create",
+  "blogs.aeliaai.org.ng":"blog",
+  "agents.aeliaai.org.ng":"agents",
+  "research.aeliaai.org.ng":"research",
+  "files.aeliaai.org.ng":"files",
+  "connectors.aeliaai.org.ng":"connectors",
+  "developers.aeliaai.org.ng":"developers",
+  "docs.aeliaai.org.ng":"docs",
+  "status.aeliaai.org.ng":"status",
+  "workspace.aeliaai.org.ng":"projects",
+  "auth.aeliaai.org.ng":"account",
+  "media.aeliaai.org.ng":"create"
+};
+function viewFromPath(pathname){const clean=pathname.replace(/\\/+$/,"")||"/";if(clean==="/"&&HOST_TO_VIEW[location.hostname])return HOST_TO_VIEW[location.hostname];return PATH_TO_VIEW[clean]||"home";}
 function syncRoute(){setView(viewFromPath(location.pathname),{push:false});}
 window.addEventListener("popstate",syncRoute);
 function render(){document.body.classList.toggle("night",AELIA.theme==="night");document.body.classList.toggle("public-home",state.view==="home");const root=document.querySelector("#view");root.innerHTML=views[state.view]();bind();if(state.view==="chat")scrollMessages();}
