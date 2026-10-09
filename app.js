@@ -61,7 +61,7 @@ const HOST_TO_VIEW={
   "auth.aeliaai.org.ng":"account",
   "media.aeliaai.org.ng":"create"
 };
-function viewFromPath(pathname){const clean=pathname.replace(/\\/+$/,"")||"/";if(clean==="/"&&HOST_TO_VIEW[location.hostname])return HOST_TO_VIEW[location.hostname];return PATH_TO_VIEW[clean]||"home";}
+function viewFromPath(pathname){const clean=pathname.replace(/\/+$/,"")||"/";if(clean==="/"&&HOST_TO_VIEW[location.hostname])return HOST_TO_VIEW[location.hostname];return PATH_TO_VIEW[clean]||"home";}
 function syncRoute(){setView(viewFromPath(location.pathname),{push:false});}
 window.addEventListener("popstate",syncRoute);
 function render(){document.body.classList.toggle("night",AELIA.theme==="night");document.body.classList.toggle("public-home",state.view==="home");const root=document.querySelector("#view");root.innerHTML=views[state.view]();bind();if(state.view==="chat")scrollMessages();}
