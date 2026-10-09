@@ -95,3 +95,11 @@ body.night .oa-footer{background:rgba(5,18,36,.76);border-color:rgba(255,255,255
 
 .oa-footer{display:block}.oa-footer-top{display:grid;grid-template-columns:1.6fr repeat(6,minmax(0,1fr));gap:34px}.oa-footer-top>div{min-width:0}.oa-footer h4{margin:0 0 14px;font-size:12px;text-transform:uppercase;letter-spacing:.09em}.oa-footer button,.oa-footer a{display:block;border:0;background:none;padding:6px 0;text-align:left;font:inherit;opacity:.7;cursor:pointer}.oa-footer button:hover,.oa-footer a:hover{opacity:1}.oa-socials{display:inline-flex;gap:16px}.oa-socials a{display:inline-block}.oa-footer-bottom{margin-top:36px}
 @media(max-width:1100px){.oa-footer-top{grid-template-columns:repeat(4,1fr)}.oa-footer-brand{grid-column:1/-1}}@media(max-width:650px){.oa-footer-top{grid-template-columns:repeat(2,1fr)}.oa-footer-brand{grid-column:1/-1}}
+
+/* Novella Matrix ecosystem homepage additions */
+.oa-ecosystem article{min-height:250px}
+.oa-novella-ecosystem .oa-catalog-grid{margin-top:24px}
+.oa-novella-ecosystem .ecosystem-card{display:flex;flex-direction:column;gap:10px;padding:22px;border:1px solid var(--line);border-radius:18px;background:var(--panel);color:var(--text);text-decoration:none;box-shadow:var(--shadow);min-height:130px}
+.oa-novella-ecosystem .ecosystem-card:hover{transform:translateY(-2px);border-color:var(--cyan2)}
+.oa-novella-ecosystem .ecosystem-card b{font-size:16px}
+.oa-novella-ecosystem .ecosystem-card small{font-size:13px;color:var(--muted)}
