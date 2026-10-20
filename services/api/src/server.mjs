@@ -17,6 +17,7 @@ const JWT_SECRET=process.env.JWT_SECRET||"";
 const PUBLIC_APP_URL=(process.env.PUBLIC_APP_URL||"https://aeliaai.org.ng").replace(/\/$/,"");
 const MAIL_FROM=process.env.MAIL_FROM||"AELIA AI <no-reply@aeliaai.org.ng>";
 const RESEND_API_KEY=process.env.RESEND_API_KEY||"";
+const MCP_API_KEY=process.env.AELIA_MCP_API_KEY||"";
 const ADMIN_EMAIL=process.env.ADMIN_EMAIL||"";
 const db=DATABASE_URL?new Pool({connectionString:DATABASE_URL,ssl:!DATABASE_URL.includes("localhost")&&!DATABASE_URL.includes("127.0.0.1")?{rejectUnauthorized:false}:undefined}):null;
 const client=AI_API_KEY?new OpenAI({apiKey:AI_API_KEY,...(AI_BASE_URL?{baseURL:AI_BASE_URL}:{})}):null;
@@ -119,6 +120,39 @@ const requestHandler=async(req,res)=>{
   try{
     const url=new URL(req.url||"/","http://aelia.local");
     if(url.pathname.startsWith("/api/")) url.pathname=url.pathname.slice(4);
+    if(url.pathname==="/mcp"){
+      if(req.method==="GET")return send(res,200,{ok:true,service:"aelia-mcp",endpoint:"/mcp",protocol:"MCP Streamable HTTP",tools:["aelia_health","aelia_capabilities","aelia_agents"],note:"Read-only foundation tools are available; model actions require AELIA_MCP_API_KEY."});
+      if(req.method!=="POST")return send(res,405,{error:"Use POST for MCP JSON-RPC requests."});
+      const rpc=await body(req),id=rpc.id??null,method=String(rpc.method||"");
+      if(rpc.jsonrpc!=="2.0"||!method)return send(res,400,{jsonrpc:"2.0",id,error:{code:-32600,message:"Invalid JSON-RPC request"}});
+      if(method==="notifications/initialized"||method==="notifications/cancelled"){res.writeHead(202,{"Cache-Control":"no-store"});res.end();return;}
+      if(method==="ping"){send(res,200,{jsonrpc:"2.0",id,result:{}});return;}
+      if(method==="initialize"){send(res,200,{jsonrpc:"2.0",id,result:{protocolVersion:"2025-03-26",capabilities:{tools:{listChanged:false}},serverInfo:{name:"aelia-mcp",version:"0.1.0"},instructions:"AELIA MCP exposes read-only health, capability and agent discovery tools. Chat and agent execution require a configured AELIA_MCP_API_KEY."}});return;}
+      if(method==="tools/list"){
+        const tools=[
+          {name:"aelia_health",description:"Read the AELIA API runtime health and enabled-service flags.",inputSchema:{type:"object",properties:{},additionalProperties:false}},
+          {name:"aelia_capabilities",description:"List capability names currently declared by the AELIA API foundation.",inputSchema:{type:"object",properties:{},additionalProperties:false}},
+          {name:"aelia_agents",description:"List AELIA agent names and whether the model runtime is live or in foundation mode.",inputSchema:{type:"object",properties:{},additionalProperties:false}}
+        ];
+        if(MCP_API_KEY){tools.push({name:"aelia_chat",description:"Send a message to the AELIA chat runtime. Requires an authorized MCP bearer key.",inputSchema:{type:"object",properties:{message:{type:"string",minLength:1,maxLength:12000},model:{type:"string"}},required:["message"],additionalProperties:false}});tools.push({name:"aelia_run_agent",description:"Run an AELIA specialist agent. Requires an authorized MCP bearer key.",inputSchema:{type:"object",properties:{agent:{type:"string",enum:["chief","researcher","developer","operator"]},task:{type:"string",minLength:1,maxLength:12000}},required:["task"],additionalProperties:false}});}
+        send(res,200,{jsonrpc:"2.0",id,result:{tools}});return;
+      }
+      if(method==="tools/call"){
+        const p=rpc.params||{},name=String(p.name||""),args=p.arguments||{};
+        const asText=value=>({content:[{type:"text",text:JSON.stringify(value)}],structuredContent:value});
+        if(name==="aelia_health"){send(res,200,{jsonrpc:"2.0",id,result:asText({ok:true,service:"aelia-api",version:"0.4",mode:client?"live":"foundation",database:!!db,email_provider:!!RESEND_API_KEY})});return;}
+        if(name==="aelia_capabilities"){send(res,200,{jsonrpc:"2.0",id,result:asText({capabilities:capabilities(),version:"0.4"})});return;}
+        if(name==="aelia_agents"){send(res,200,{jsonrpc:"2.0",id,result:asText({agents:Object.entries(AGENTS).map(([agent,a])=>({id:agent,name:a.name,status:client?"live":"foundation"}))})});return;}
+        if(name==="aelia_chat"||name==="aelia_run_agent"){
+          if(!MCP_API_KEY||req.headers.authorization!=="Bearer "+MCP_API_KEY){send(res,200,{jsonrpc:"2.0",id,result:{isError:true,content:[{type:"text",text:"This MCP tool requires a valid AELIA MCP bearer key."}]}});return;}
+          const result=name==="aelia_chat"?await chat(args):await runAgent(args);
+          send(res,200,{jsonrpc:"2.0",id,result:asText(result)});return;
+        }
+        send(res,200,{jsonrpc:"2.0",id,result:{isError:true,content:[{type:"text",text:"Unknown tool: "+name}]}});return;
+      }
+      send(res,200,{jsonrpc:"2.0",id,error:{code:-32601,message:"Method not found"}});
+      return;
+    }
     if(req.method==="POST"&&url.pathname==="/v1/auth/register"){
       const p=await body(req),name=String(p.name||"").trim(),email=String(p.email||"").trim().toLowerCase(),password=String(p.password||"");
       if(!db)return send(res,503,{error:"Account database is not configured yet."});
