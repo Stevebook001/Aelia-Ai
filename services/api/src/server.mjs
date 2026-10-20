@@ -140,8 +140,8 @@ const requestHandler=async(req,res)=>{
       if(method==="tools/call"){
         const p=rpc.params||{},name=String(p.name||""),args=p.arguments||{};
         const asText=value=>({content:[{type:"text",text:JSON.stringify(value)}],structuredContent:value});
-        if(name==="aelia_health"){send(res,200,{jsonrpc:"2.0",id,result:asText({ok:true,service:"aelia-api",version:"0.4",mode:client?"live":"foundation",database:!!db,email_provider:!!RESEND_API_KEY})});return;}
-        if(name==="aelia_capabilities"){send(res,200,{jsonrpc:"2.0",id,result:asText({capabilities:capabilities(),version:"0.4"})});return;}
+        if(name==="aelia_health"){send(res,200,{jsonrpc:"2.0",id,result:asText({ok:true,service:"aelia-api",version:"0.5",mode:client?"live":"foundation",database:!!db,email_provider:!!RESEND_API_KEY})});return;}
+        if(name==="aelia_capabilities"){send(res,200,{jsonrpc:"2.0",id,result:asText({capabilities:capabilities(),version:"0.5"})});return;}
         if(name==="aelia_agents"){send(res,200,{jsonrpc:"2.0",id,result:asText({agents:Object.entries(AGENTS).map(([agent,a])=>({id:agent,name:a.name,status:client?"live":"foundation"}))})});return;}
         if(name==="aelia_chat"||name==="aelia_run_agent"){
           if(!MCP_API_KEY||req.headers.authorization!=="Bearer "+MCP_API_KEY){send(res,200,{jsonrpc:"2.0",id,result:{isError:true,content:[{type:"text",text:"This MCP tool requires a valid AELIA MCP bearer key."}]}});return;}
@@ -186,8 +186,8 @@ const requestHandler=async(req,res)=>{
       delete user.password_hash;send(res,200,{token:tokenFor(user),user});return;
     }
     if(req.method==="GET"&&url.pathname==="/v1/auth/me"){const user=await authUser(req);if(!user)return send(res,401,{error:"Authentication required."});send(res,200,{user});return;}
-    if(req.method==="GET"&&url.pathname==="/health"){send(res,200,{ok:true,service:"aelia-api",version:"0.4",mode:client?"live":"foundation",database:!!db,email_provider:!!RESEND_API_KEY,time:new Date().toISOString()});return;}
-    if(req.method==="GET"&&url.pathname==="/v1/capabilities"){send(res,200,{capabilities:capabilities(),version:"0.4"});return;}
+    if(req.method==="GET"&&url.pathname==="/health"){send(res,200,{ok:true,service:"aelia-api",version:"0.5",mode:client?"live":"foundation",database:!!db,email_provider:!!RESEND_API_KEY,time:new Date().toISOString()});return;}
+    if(req.method==="GET"&&url.pathname==="/v1/capabilities"){send(res,200,{capabilities:capabilities(),version:"0.5"});return;}
     if(req.method==="GET"&&url.pathname==="/v1/agents"){send(res,200,{agents:Object.entries(AGENTS).map(([id,a])=>({id,name:a.name,status:client?"live":"foundation"}))});return;}
     if(req.method==="POST"&&url.pathname==="/v1/chat"){send(res,200,await chat(await body(req)));return;}
     if(req.method==="POST"&&url.pathname==="/v1/briefing"){const p=await body(req);send(res,200,{ok:true,briefing:{summary:"AELIA briefing foundation generated.",focus:p.focus||"priority work",next_steps:p.next_steps||[]},mode:client?"live":"foundation"});return;}
