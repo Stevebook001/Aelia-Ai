@@ -59,12 +59,71 @@ const HOST_TO_VIEW={
   "status.aeliaai.org.ng":"status",
   "workspace.aeliaai.org.ng":"projects",
   "auth.aeliaai.org.ng":"account",
-  "media.aeliaai.org.ng":"create"
+  "media.aeliaai.org.ng":"create",
+  "videos.aeliaai.org.ng":"create",
+  "photos.aeliaai.org.ng":"create",
+  "music.aeliaai.org.ng":"create",
+  "collab.aeliaai.org.ng":"business",
+  "plugin.aeliaai.org.ng":"connectors",
+  "studio.aeliaai.org.ng":"create",
+  "integrations.aeliaai.org.ng":"connectors",
+  "community.aeliaai.org.ng":"blog",
+  "academy.aeliaai.org.ng":"docs",
+  "labs.aeliaai.org.ng":"research",
+  "translate.aeliaai.org.ng":"create",
+  "voice.aeliaai.org.ng":"create",
+  "billing.aeliaai.org.ng":"pricing",
+  "support.aeliaai.org.ng":"contact"
 };
 function viewFromPath(pathname){const clean=pathname.replace(/\/+$/,"")||"/";if(clean==="/"&&HOST_TO_VIEW[location.hostname])return HOST_TO_VIEW[location.hostname];return PATH_TO_VIEW[clean]||"home";}
+const VIEW_SEO={
+ home:["AELIA AI — Light. Intelligence. Yours.","One intelligence workspace for everything you want to build. Chat, research, create, code, collaborate and connect with AELIA AI."],
+ about:["About AELIA AI — Built by Novella Matrix","Learn about AELIA AI, the intelligence workspace being built by Novella Matrix in Lagos, Nigeria."],
+ blog:["AELIA AI Blog — Ideas, Engineering and Product Updates","Articles on AI workspaces, agents, developer tools, safe integrations and building AELIA AI."],
+ article:["AELIA AI Blog — Ideas and Engineering","Read AELIA AI articles on product design, agents, developer tools and AI infrastructure."],
+ docs:["AELIA AI Documentation","Guides and documentation for the AELIA AI workspace, developer platform and integrations."],
+ developers:["AELIA AI Developer Platform","Explore the AELIA developer platform, API direction, SDKs, connector tools and integration guidance."],
+ connectors:["AELIA AI Connectors and Plugins","Explore the AELIA connector ecosystem and learn how integrations will connect external tools to AELIA."],
+ pricing:["AELIA AI Plans and Pricing","Explore AELIA AI plans. Pricing and paid billing will be announced when payments are ready."],
+ business:["AELIA AI for Business and Collaboration","AELIA AI for teams, shared projects, collaboration and business workflows."],
+ research:["AELIA AI Research","Research workflows designed to organize questions, sources, evidence and useful findings."],
+ contact:["Contact AELIA AI","Contact the AELIA AI team at Novella Matrix."],
+ company:["AELIA AI — Company","AELIA AI is being built by Novella Matrix in Lagos, Nigeria."],
+ legal:["AELIA AI Terms, Privacy and Policies","Review AELIA AI terms, privacy information and platform policies."],
+ status:["AELIA AI Service Status","Service availability and platform status for AELIA AI."],
+ chat:["AELIA AI Chat and Reasoning","Use the AELIA AI workspace for conversations and reasoning."],
+ agents:["AELIA AI Agents","Explore agent workflows and the AELIA agent runtime foundation."],
+ create:["AELIA AI Studio — Create","Explore AELIA AI creation tools for files, images, video, voice, music and other media as capabilities become available."],
+ projects:["AELIA AI Workspace and Projects","Organize projects, conversations and working context in AELIA AI."],
+ files:["AELIA AI Files and Knowledge","Manage workspace files and knowledge in AELIA AI."],
+ workflows:["AELIA AI Automations","Explore automation and workflow capabilities in AELIA AI."],
+ account:["AELIA AI Account","Manage your AELIA AI account."],
+ admin:["AELIA AI Admin Console","Private editorial and platform operations for authorized administrators."]
+};
+const PRIVATE_VIEWS=new Set(["chat","agents","projects","files","workflows","settings","account","admin","verify"]);
+function updatePageMetadata(){
+ const host=location.hostname.toLowerCase(), view=state.view||"home", prefix=host.split(".")[0];
+ const hostTitle={"videos":"AELIA AI Video Studio","photos":"AELIA AI Photo Studio","music":"AELIA AI Music Studio","collab":"AELIA AI Collaboration","plugin":"AELIA AI Plugin Hub","studio":"AELIA AI Studio","integrations":"AELIA AI Integrations","community":"AELIA AI Community","academy":"AELIA AI Academy","labs":"AELIA AI Labs","translate":"AELIA AI Translation","voice":"AELIA AI Voice Studio","billing":"AELIA AI Billing","support":"AELIA AI Support"};
+ const base=VIEW_SEO[view]||VIEW_SEO.home, title=(hostTitle[prefix]&&location.pathname==="/" ? hostTitle[prefix] : base[0]);
+ const description=base[1];
+ const privateHost=["ai","chat","console","workspace","auth"].includes(prefix)||PRIVATE_VIEWS.has(view);
+ const canonical=(privateHost?"https://aeliaai.org.ng":"https://"+host)+(location.pathname||"/")+location.search;
+ document.title=title;
+ const meta=(selector,attr,value)=>{let el=document.querySelector(selector);if(!el){el=document.createElement("meta");if(selector.startsWith('meta[name='))el.name=selector.slice(11,-2);else if(selector.startsWith('meta[property='))el.setAttribute("property",selector.slice(14,-2));document.head.appendChild(el);}el.setAttribute(attr,value);};
+ meta('meta[name="description"]',"content",description);
+ meta('meta[name="robots"]',"content",privateHost?"noindex,nofollow,noarchive":"index,follow");
+ meta('meta[property="og:title"]',"content",title);
+ meta('meta[property="og:description"]',"content",description);
+ meta('meta[property="og:url"]',"content",canonical);
+ meta('meta[property="og:image"]',"content","https://aeliaai.org.ng/og-default.svg");
+ meta('meta[name="twitter:title"]',"content",title);
+ meta('meta[name="twitter:description"]',"content",description);
+ meta('meta[name="twitter:image"]',"content","https://aeliaai.org.ng/og-default.svg");
+ let link=document.querySelector('link[rel="canonical"]');if(!link){link=document.createElement("link");link.rel="canonical";document.head.appendChild(link);}link.href=canonical;
+}
 function syncRoute(){setView(viewFromPath(location.pathname),{push:false});}
 window.addEventListener("popstate",syncRoute);
-function render(){document.body.classList.toggle("night",AELIA.theme==="night");document.body.classList.toggle("public-home",state.view==="home");const root=document.querySelector("#view");root.innerHTML=views[state.view]();bind();if(state.view==="chat")scrollMessages();}
+function render(){document.body.classList.toggle("night",AELIA.theme==="night");document.body.classList.toggle("public-home",state.view==="home");const root=document.querySelector("#view");root.innerHTML=views[state.view]();updatePageMetadata();bind();if(state.view==="chat")scrollMessages();}
 
 const views={
 home:()=>`
