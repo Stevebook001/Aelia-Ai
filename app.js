@@ -109,7 +109,7 @@ function updatePageMetadata(){
  const privateHost=["ai","chat","console","workspace","auth"].includes(prefix)||PRIVATE_VIEWS.has(view);
  const canonical=(privateHost?"https://aeliaai.org.ng":"https://"+host)+(location.pathname||"/")+location.search;
  document.title=title;
- const meta=(selector,attr,value)=>{let el=document.querySelector(selector);if(!el){el=document.createElement("meta");if(selector.startsWith('meta[name='))el.name=selector.slice(11,-2);else if(selector.startsWith('meta[property='))el.setAttribute("property",selector.slice(14,-2));document.head.appendChild(el);}el.setAttribute(attr,value);};
+ const meta=(selector,attr,value)=>{let el=document.querySelector(selector);if(!el){el=document.createElement("meta");const nm=selector.match(/name="([^"]+)"/),pr=selector.match(/property="([^"]+)"/);if(nm)el.name=nm[1];if(pr)el.setAttribute("property",pr[1]);document.head.appendChild(el);}el.setAttribute(attr,value);};
  meta('meta[name="description"]',"content",description);
  meta('meta[name="robots"]',"content",privateHost?"noindex,nofollow,noarchive":"index,follow");
  meta('meta[property="og:title"]',"content",title);
