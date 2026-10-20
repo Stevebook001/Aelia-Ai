@@ -323,7 +323,9 @@ function actions(action,data){
   if(action==="refresh-account"){loadCurrentUser();return;}
   if(action==="new-chat"){state.conversations.unshift({id:crypto.randomUUID(),title:"New conversation",messages:[]});persist();setView("chat");return;}
   if(action==="clear-chat"){activeConv().messages=[];persist();render();return;}
-  if(action==="toggle-sidebar"){document.querySelector(".sidebar").classList.toggle("open");return;}\n  if(action==="toggle-public-menu"){document.querySelector("#public-menu")?.classList.toggle("open");return;}\n  if(action==="open-public-menu"){document.querySelector("#public-menu")?.classList.add("open");return;}
+  if(action==="toggle-sidebar"){document.querySelector(".sidebar").classList.toggle("open");return;}
+  if(action==="toggle-public-menu"){document.querySelector("#public-menu")?.classList.toggle("open");return;}
+  if(action==="open-public-menu"){document.querySelector("#public-menu")?.classList.add("open");return;}
   if(action==="toggle-theme"){AELIA.theme=AELIA.theme==="night"?"bright":"night";localStorage.setItem("aelia_theme",AELIA.theme);render();return;}
   if(action==="command-palette"){showCommandPalette();return;}
   if(action==="quick-chat"){setView("chat");return;}
