@@ -73,7 +73,24 @@ const HOST_TO_VIEW={
   "translate.aeliaai.org.ng":"create",
   "voice.aeliaai.org.ng":"create",
   "billing.aeliaai.org.ng":"pricing",
-  "support.aeliaai.org.ng":"contact"
+  "support.aeliaai.org.ng":"contact",
+  "learn.aeliaai.org.ng":"docs",
+  "playground.aeliaai.org.ng":"create",
+  "prompts.aeliaai.org.ng":"create",
+  "tasks.aeliaai.org.ng":"projects",
+  "automation.aeliaai.org.ng":"workflows",
+  "models.aeliaai.org.ng":"developers",
+  "sdk.aeliaai.org.ng":"developers",
+  "webhooks.aeliaai.org.ng":"developers",
+  "marketplace.aeliaai.org.ng":"connectors",
+  "templates.aeliaai.org.ng":"create",
+  "teams.aeliaai.org.ng":"business",
+  "enterprise.aeliaai.org.ng":"business",
+  "help.aeliaai.org.ng":"contact",
+  "feedback.aeliaai.org.ng":"feedback",
+  "news.aeliaai.org.ng":"blog",
+  "releases.aeliaai.org.ng":"blog",
+  "launch.aeliaai.org.ng":"about"
 };
 function viewFromPath(pathname){const clean=pathname.replace(/\/+$/,"")||"/";if(clean==="/"&&HOST_TO_VIEW[location.hostname])return HOST_TO_VIEW[location.hostname];return PATH_TO_VIEW[clean]||"home";}
 const VIEW_SEO={
@@ -103,7 +120,7 @@ const VIEW_SEO={
 const PRIVATE_VIEWS=new Set(["chat","agents","projects","files","workflows","settings","account","admin","verify"]);
 function updatePageMetadata(){
  const host=location.hostname.toLowerCase(), view=state.view||"home", prefix=host.split(".")[0];
- const hostTitle={"videos":"AELIA AI Video Studio","photos":"AELIA AI Photo Studio","music":"AELIA AI Music Studio","collab":"AELIA AI Collaboration","plugin":"AELIA AI Plugin Hub","studio":"AELIA AI Studio","integrations":"AELIA AI Integrations","community":"AELIA AI Community","academy":"AELIA AI Academy","labs":"AELIA AI Labs","translate":"AELIA AI Translation","voice":"AELIA AI Voice Studio","billing":"AELIA AI Billing","support":"AELIA AI Support"};
+ const hostTitle={"videos":"AELIA AI Video Studio","photos":"AELIA AI Photo Studio","music":"AELIA AI Music Studio","collab":"AELIA AI Collaboration","plugin":"AELIA AI Plugin Hub","studio":"AELIA AI Studio","integrations":"AELIA AI Integrations","community":"AELIA AI Community","academy":"AELIA AI Academy","labs":"AELIA AI Labs","translate":"AELIA AI Translation","voice":"AELIA AI Voice Studio","billing":"AELIA AI Billing","support":"AELIA AI Support","learn":"AELIA AI Learning Center","playground":"AELIA AI Playground","prompts":"AELIA AI Prompt Studio","tasks":"AELIA AI Tasks","automation":"AELIA AI Automation","models":"AELIA AI Models","sdk":"AELIA AI SDKs","webhooks":"AELIA AI Webhooks","marketplace":"AELIA AI Marketplace","templates":"AELIA AI Templates","teams":"AELIA AI Teams","enterprise":"AELIA AI Enterprise","help":"AELIA AI Help Center","feedback":"AELIA AI Feedback","news":"AELIA AI News","releases":"AELIA AI Release Notes","launch":"AELIA AI Launch"};
  const base=VIEW_SEO[view]||VIEW_SEO.home, title=(hostTitle[prefix]&&location.pathname==="/" ? hostTitle[prefix] : base[0]);
  const description=base[1];
  const privateHost=["ai","chat","console","workspace","auth"].includes(prefix)||PRIVATE_VIEWS.has(view);
