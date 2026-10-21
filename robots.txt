@@ -1,4 +1,8 @@
 User-agent: *
 Allow: /
+Disallow: /admin
+Disallow: /account
+Disallow: /settings
+Disallow: /verify-email
 
 Sitemap: https://aeliaai.org.ng/sitemap.xml
