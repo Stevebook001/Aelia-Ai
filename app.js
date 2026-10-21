@@ -74,6 +74,7 @@ const HOST_TO_VIEW={
   "voice.aeliaai.org.ng":"create",
   "billing.aeliaai.org.ng":"pricing",
   "support.aeliaai.org.ng":"contact",
+  "admin.aeliaai.org.ng":"admin",
   "learn.aeliaai.org.ng":"docs",
   "playground.aeliaai.org.ng":"create",
   "prompts.aeliaai.org.ng":"create",
@@ -119,23 +120,68 @@ const VIEW_SEO={
 };
 const PRIVATE_VIEWS=new Set(["chat","agents","projects","files","workflows","settings","account","admin","verify"]);
 function updatePageMetadata(){
- const host=location.hostname.toLowerCase(), view=state.view||"home", prefix=host.split(".")[0];
- const hostTitle={"videos":"AELIA AI Video Studio","photos":"AELIA AI Photo Studio","music":"AELIA AI Music Studio","collab":"AELIA AI Collaboration","plugin":"AELIA AI Plugin Hub","studio":"AELIA AI Studio","integrations":"AELIA AI Integrations","community":"AELIA AI Community","academy":"AELIA AI Academy","labs":"AELIA AI Labs","translate":"AELIA AI Translation","voice":"AELIA AI Voice Studio","billing":"AELIA AI Billing","support":"AELIA AI Support","learn":"AELIA AI Learning Center","playground":"AELIA AI Playground","prompts":"AELIA AI Prompt Studio","tasks":"AELIA AI Tasks","automation":"AELIA AI Automation","models":"AELIA AI Models","sdk":"AELIA AI SDKs","webhooks":"AELIA AI Webhooks","marketplace":"AELIA AI Marketplace","templates":"AELIA AI Templates","teams":"AELIA AI Teams","enterprise":"AELIA AI Enterprise","help":"AELIA AI Help Center","feedback":"AELIA AI Feedback","news":"AELIA AI News","releases":"AELIA AI Release Notes","launch":"AELIA AI Launch"};
- const base=VIEW_SEO[view]||VIEW_SEO.home, title=(hostTitle[prefix]&&location.pathname==="/" ? hostTitle[prefix] : base[0]);
- const description=base[1];
- const privateHost=["ai","chat","console","workspace","auth"].includes(prefix)||PRIVATE_VIEWS.has(view);
- const canonical=(privateHost?"https://aeliaai.org.ng":"https://"+host)+(location.pathname||"/")+location.search;
+ const host=location.hostname.toLowerCase(),view=state.view||"home",prefix=host.split(".")[0];
+ const article=(view==="article"&&typeof AELIA_BLOGS!=="undefined")?AELIA_BLOGS.find(x=>x.slug===state.articleSlug):null;
+ const viewMeta={
+ home:["AELIA AI — Light. Intelligence. Yours.","One intelligence workspace for everything you want to build: chat, research, agents, files, coding, creation and connected workflows.","https://images.unsplash.com/photo-1677442136019-21780ecad995?auto=format&fit=crop&crop=entropy&w=1200&h=630&q=85"],
+ about:["About AELIA AI — Our mission and product vision","Learn about AELIA AI, its product principles and the workspace being built for people, teams and developers.","https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&crop=entropy&w=1200&h=630&q=85"],
+ blog:["AELIA AI Blog — Product, Agents and Engineering","Explore original AELIA articles on AI workspaces, agent permissions, developer infrastructure and building AI products.","https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&crop=entropy&w=1200&h=630&q=85"],
+ docs:["AELIA AI Documentation — Guides and References","Find AELIA workspace guides, developer references, integration notes and product documentation.","https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&crop=entropy&w=1200&h=630&q=85"],
+ developers:["AELIA AI Developer Platform — API and SDKs","Build with AELIA through APIs, SDKs, agent tools, connectors, asynchronous jobs and webhooks as services become available.","https://images.unsplash.com/photo-1555949963-ff9fe0c870eb?auto=format&fit=crop&crop=entropy&w=1200&h=630&q=85"],
+ connectors:["AELIA AI Connectors — Integrations and Tools","Discover the connector architecture for connecting approved external tools to AELIA with clear permissions and scoped access.","https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&crop=entropy&w=1200&h=630&q=85"],
+ pricing:["AELIA AI Pricing — Plans and Usage","Review AELIA's planned free, personal, developer and team product tiers. Final prices will be announced before billing launches.","https://images.unsplash.com/photo-1497366754035-f200968a6e72?auto=format&fit=crop&crop=entropy&w=1200&h=630&q=85"],
+ business:["AELIA AI for Business — Teams and Workflows","Explore AELIA's planned team workspace, shared projects, governed connectors and business automation workflows.","https://images.unsplash.com/photo-1521737711867-e3b97375f902?auto=format&fit=crop&crop=entropy&w=1200&h=630&q=85"],
+ research:["AELIA AI Research — Sources, Evidence and Findings","Learn how AELIA research workflows organize questions, source material, evidence and useful findings.","https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&crop=entropy&w=1200&h=630&q=85"],
+ contact:["Contact AELIA AI — Product and Developer Support","Contact AELIA about product questions, partnerships, developer integrations, safety reports and support.","https://images.unsplash.com/photo-1497366754035-f200968a6e72?auto=format&fit=crop&crop=entropy&w=1200&h=630&q=85"],
+ company:["AELIA AI — Company Information","Read about AELIA AI's mission, product direction, principles and contact channels.","https://images.unsplash.com/photo-1519389950473-47ba0277781c?auto=format&fit=crop&crop=entropy&w=1200&h=630&q=85"],
+ legal:["AELIA AI — Privacy, Terms and Policies","Review AELIA's platform terms, privacy information, safety guidance and user policies.","https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?auto=format&fit=crop&crop=entropy&w=1200&h=630&q=85"],
+ status:["AELIA AI Service Status — Platform Health","View AELIA's public service status and platform availability information.","https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&crop=entropy&w=1200&h=630&q=85"],
+ chat:["AELIA AI Chat — Conversation and Reasoning","Open the AELIA conversation workspace for questions, drafting, reasoning and project work.","https://images.unsplash.com/photo-1677442136019-21780ecad995?auto=format&fit=crop&crop=entropy&w=1200&h=630&q=85"],
+ agents:["AELIA AI Agents — Controlled Tool Execution","Explore AELIA agent workflows designed around tools, permissions, verification and review.","https://images.unsplash.com/photo-1485827404703-89b55fcc595e?auto=format&fit=crop&crop=entropy&w=1200&h=630&q=85"],
+ create:["AELIA AI Create — Media and File Workflows","Explore AELIA's creation workspace for documents, images, audio, video and other assets as integrations become available.","https://images.unsplash.com/photo-1535223289827-42f1e9919769?auto=format&fit=crop&crop=entropy&w=1200&h=630&q=85"],
+ projects:["AELIA AI Projects — Organize Your Work","Organize conversations, files, plans and related work in the AELIA project workspace.","https://images.unsplash.com/photo-1497366754035-f200968a6e72?auto=format&fit=crop&crop=entropy&w=1200&h=630&q=85"],
+ files:["AELIA AI Files — Documents and Knowledge","Learn about AELIA file and knowledge workflows for workspace context and document handling.","https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&crop=entropy&w=1200&h=630&q=85"],
+ workflows:["AELIA AI Automations — Tasks and Workflows","Explore the AELIA automation direction for repeatable tasks, background jobs and connected workflows.","https://images.unsplash.com/photo-1531482615713-2afd69097998?auto=format&fit=crop&crop=entropy&w=1200&h=630&q=85"],
+ account:["AELIA AI Account — Sign In and Identity","Access AELIA account features. Authentication and account services may require a configured account.","https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?auto=format&fit=crop&crop=entropy&w=1200&h=630&q=85"],
+ admin:["AELIA AI Admin Console — Private Operations","Private AELIA administration for authorized users, editorial review and platform operations.","https://images.unsplash.com/photo-1555949963-ff9fe0c870eb?auto=format&fit=crop&crop=entropy&w=1200&h=630&q=85"]
+ };
+ const hostMeta={
+ videos:["AELIA AI Video Studio","Plan and manage AI video creation workflows, voice-over, rendering jobs and media exports.","https://images.unsplash.com/photo-1535223289827-42f1e9919769?auto=format&fit=crop&crop=entropy&w=1200&h=630&q=85"],
+ photos:["AELIA AI Photo Studio","Explore image creation and photo workflows in the AELIA creation workspace.","https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&crop=entropy&w=1200&h=630&q=85"],
+ music:["AELIA AI Music Studio","Explore AELIA music, song, audio and voice workflow plans as providers become available.","https://images.unsplash.com/photo-1516280440614-37939bbacd81?auto=format&fit=crop&crop=entropy&w=1200&h=630&q=85"],
+ collab:["AELIA AI Collaboration","Coordinate shared projects, workspaces and integration ideas with AELIA collaboration surfaces.","https://images.unsplash.com/photo-1521737711867-e3b97375f902?auto=format&fit=crop&crop=entropy&w=1200&h=630&q=85"],
+ plugin:["AELIA AI Plugin Hub","Explore plugin and connector integration patterns for extending AELIA with approved external tools.","https://images.unsplash.com/photo-1555949963-ff9fe0c870eb?auto=format&fit=crop&crop=entropy&w=1200&h=630&q=85"],
+ studio:["AELIA AI Studio","Explore the AELIA creation workspace for documents, images, audio and media jobs.","https://images.unsplash.com/photo-1535223289827-42f1e9919769?auto=format&fit=crop&crop=entropy&w=1200&h=630&q=85"],
+ integrations:["AELIA AI Integrations","Connect approved services through scoped tools, secure credentials and explicit permissions.","https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&crop=entropy&w=1200&h=630&q=85"],
+ community:["AELIA AI Community","Read AELIA product notes and community updates about building useful AI workflows.","https://images.unsplash.com/photo-1519389950473-47ba0277781c?auto=format&fit=crop&crop=entropy&w=1200&h=630&q=85"],
+ academy:["AELIA AI Academy","Learn AI workspace concepts, agent design, developer tools and integration fundamentals.","https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&crop=entropy&w=1200&h=630&q=85"],
+ labs:["AELIA AI Labs","Explore experiments and research directions for AELIA AI capabilities.","https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&crop=entropy&w=1200&h=630&q=85"],
+ translate:["AELIA AI Translation","Explore multilingual workflow plans for text, speech and language assistance.","https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&crop=entropy&w=1200&h=630&q=85"],
+ voice:["AELIA AI Voice Studio","Explore voice and speech workflows, narration and audio generation plans.","https://images.unsplash.com/photo-1516280440614-37939bbacd81?auto=format&fit=crop&crop=entropy&w=1200&h=630&q=85"],
+ billing:["AELIA AI Billing","Information about planned AELIA usage, plans and billing controls.","https://images.unsplash.com/photo-1497366754035-f200968a6e72?auto=format&fit=crop&crop=entropy&w=1200&h=630&q=85"],
+ support:["AELIA AI Support","Get help with AELIA product questions, developer setup and account issues.","https://images.unsplash.com/photo-1497366754035-f200968a6e72?auto=format&fit=crop&crop=entropy&w=1200&h=630&q=85"],
+ admin:["AELIA AI Admin Console","Private administration and editorial review tools for authorized AELIA operators.","https://images.unsplash.com/photo-1555949963-ff9fe0c870eb?auto=format&fit=crop&crop=entropy&w=1200&h=630&q=85"]
+ };
+ const metaData=article?[article.title+" | AELIA AI",article.dek,imgUrl((typeof article.slug==="string"&&{"ai-workspace":["photo-1677442136019-21780ecad995","photo-1451187580459-43490279c0fa","photo-1518770660439-4636190af475","photo-1535223289827-42f1e9919769","photo-1516321318423-f06f85e504b3"],"agents-permissions":["photo-1485827404703-89b55fcc595e","photo-1526374965328-7f61d4dc18c5","photo-1550751827-4bd374c3f58b","photo-1555949963-ff9fe0c870eb","photo-1518770660439-4636190af475"],"developer-platform":["photo-1555949963-ff9fe0c870eb","photo-1498050108023-c5249f4df085","photo-1516321318423-f06f85e504b3","photo-1531482615713-2afd69097998","photo-1518770660439-4636190af475"],"building-from-lagos":["photo-1519389950473-47ba0277781c","photo-1521737711867-e3b97375f902","photo-1497366754035-f200968a6e72","photo-1516321318423-f06f85e504b3","photo-1500530855697-b586d89ba3ee"]}[article.slug]||["photo-1677442136019-21780ecad995"])[0])]:hostMeta[prefix]&&location.pathname==="/" ? hostMeta[prefix] : (viewMeta[view]||viewMeta.home);
+ const title=metaData[0],description=metaData[1],image=metaData[2];
+ const privateHost=["ai","chat","console","workspace","auth","admin"].includes(prefix)||["chat","agents","projects","files","workflows","settings","account","admin","verify"].includes(view);
+ const canonical=article?"https://aeliaai.org.ng/blog/"+article.slug:(privateHost?"https://aeliaai.org.ng":"https://"+host)+(location.pathname||"/");
  document.title=title;
  const meta=(selector,attr,value)=>{let el=document.querySelector(selector);if(!el){el=document.createElement("meta");const nm=selector.match(/name="([^"]+)"/),pr=selector.match(/property="([^"]+)"/);if(nm)el.name=nm[1];if(pr)el.setAttribute("property",pr[1]);document.head.appendChild(el);}el.setAttribute(attr,value);};
  meta('meta[name="description"]',"content",description);
  meta('meta[name="robots"]',"content",privateHost?"noindex,nofollow,noarchive":"index,follow");
+ meta('meta[property="og:type"]',"content",article?"article":"website");
+ meta('meta[property="og:site_name"]',"content","AELIA AI");
  meta('meta[property="og:title"]',"content",title);
  meta('meta[property="og:description"]',"content",description);
  meta('meta[property="og:url"]',"content",canonical);
- meta('meta[property="og:image"]',"content","https://aeliaai.org.ng/og-default.svg");
+ meta('meta[property="og:image"]',"content",image);
+ meta('meta[property="og:image:width"]',"content","1200");
+ meta('meta[property="og:image:height"]',"content","630");
+ meta('meta[name="twitter:card"]',"content","summary_large_image");
  meta('meta[name="twitter:title"]',"content",title);
  meta('meta[name="twitter:description"]',"content",description);
- meta('meta[name="twitter:image"]',"content","https://aeliaai.org.ng/og-default.svg");
+ meta('meta[name="twitter:image"]',"content",image);
  let link=document.querySelector('link[rel="canonical"]');if(!link){link=document.createElement("link");link.rel="canonical";document.head.appendChild(link);}link.href=canonical;
 }
 function syncRoute(){setView(viewFromPath(location.pathname),{push:false});}
@@ -224,7 +270,7 @@ home:()=>`
   <section class="oa-final"><span class="eyebrow">AELIA AI</span><h2>One platform. Many ways to create, reason and act.</h2><div class="actions"><button class="btn primary" data-view="chat">Try AELIA →</button><button class="btn secondary" data-view="account">Create account / Sign in</button></div></section>
 <footer class="oa-footer">
   <div class="oa-footer-top">
-    <div class="oa-footer-brand"><img src="/aelia-mark.svg" alt="AELIA AI"><strong>AELIA AI</strong><p>LIGHT · INTELLIGENCE · YOURS</p><small>Built by Novella Matrix · Lagos, Nigeria</small></div>
+    <div class="oa-footer-brand"><img src="/aelia-mark.svg" alt="AELIA AI"><strong>AELIA AI</strong><p>LIGHT · INTELLIGENCE · YOURS</p></div>
     <div><h4>Research</h4><button data-view="research">Research Overview</button><button data-view="research">Research Index</button><button data-view="research">Safety</button><button data-view="legal">Security & Privacy</button><button data-view="legal">Trust & Transparency</button></div>
     <div><h4>Products</h4><button data-view="chat">AELIA Chat</button><button data-view="agents">AELIA Agents</button><button data-view="create">Create</button><button data-view="business">AELIA Business</button><button data-view="blog">Release Notes</button></div>
     <div><h4>Developers</h4><button data-view="developers">API Platform</button><button data-view="docs">Documentation</button><button data-view="developers">SDKs & Tools</button><button data-view="connectors">Connectors</button><button data-view="contact">Developer Forum</button></div>
@@ -232,7 +278,7 @@ home:()=>`
     <div><h4>Support</h4><button data-view="docs">Help & Docs</button><button data-view="status">System Status</button><button data-view="feedback">Feedback</button><button data-view="legal">Safety Center</button><a href="mailto:support@aeliaai.org.ng">Support email</a></div>
     <div><h4>More</h4><button data-view="pricing">Pricing</button><button data-view="account">Create account</button><button data-view="account">Sign in</button><button data-view="legal">Terms & Policies</button></div>
   </div>
-  <div class="oa-footer-bottom"><span>© 2026 AELIA AI · Novella Matrix</span><span>Lagos, Nigeria · English</span><span>AELIA AI · Built for light, intelligence and yours.</span><span class="oa-socials"><a href="mailto:hello@aeliaai.org.ng" aria-label="Email">Email</a><a href="mailto:security@aeliaai.org.ng" aria-label="Security">Security</a></span></div>
+  <div class="oa-footer-bottom"><span>© 2026 AELIA AI</span><span>Lagos, Nigeria · English</span><span>AELIA AI · Built for light, intelligence and yours.</span><span class="oa-socials"><a href="mailto:hello@aeliaai.org.ng" aria-label="Email">Email</a><a href="mailto:security@aeliaai.org.ng" aria-label="Security">Security</a></span></div>
 </footer>
 </section>`,
 
