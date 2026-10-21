@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#ffffff">
+  <meta name="description" content="Find AELIA workspace guides, developer references, integration notes and product documentation.">
+  <meta name="robots" content="index,follow,max-image-preview:large">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="AELIA AI">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:url" content="https://aeliaai.org.ng/docs">
+  <meta property="og:title" content="AELIA AI Documentation — Guides and References">
+  <meta property="og:description" content="Find AELIA workspace guides, developer references, integration notes and product documentation.">
+  <meta property="og:image" content="https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=1200&h=630&q=85">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="AELIA AI Documentation — Guides and References">
+  <meta name="twitter:description" content="Find AELIA workspace guides, developer references, integration notes and product documentation.">
+  <meta name="twitter:image" content="https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=1200&h=630&q=85">
+  <link rel="canonical" href="https://aeliaai.org.ng/docs">
+  <link rel="icon" href="/aelia-mark.svg" type="image/svg+xml">
+  <link rel="manifest" href="/site.webmanifest">
+  <title>AELIA AI Documentation — Guides and References</title>
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <div id="app">
+    <aside class="sidebar">
+      <div class="brand">
+        <span class="brand-mark" aria-hidden="true"><span class="aelia-orbit"></span><span class="aelia-core">A</span></span>
+        <span>AELIA <b>AI</b></span>
+      </div>
+      <div class="brand-sub">LIGHT · INTELLIGENCE · YOURS</div>
+      <button class="new-chat" data-action="new-chat">＋ New chat</button>
+      <nav id="nav">
+        <button class="nav-item active" data-view="home">⌂ <span>Today</span></button>
+        <button class="nav-item" data-view="chat">◌ <span>Chat & Reason</span></button>
+        <button class="nav-item" data-view="agents">✦ <span>AELIA Agents</span></button>
+        <button class="nav-item" data-view="research">⌕ <span>Research</span></button>
+        <button class="nav-item" data-view="create">✧ <span>Create</span></button>
+        <button class="nav-item" data-view="projects">▦ <span>Projects</span></button>
+        <button class="nav-item" data-view="files">□ <span>Files & Knowledge</span></button>
+        <button class="nav-item" data-view="workflows">↯ <span>Automations</span></button>
+        <button class="nav-item" data-view="connectors">◈ <span>Connectors</span></button>
+        <button class="nav-item" data-view="channels">◉ <span>Channels</span></button>
+        <button class="nav-item" data-view="developers">⌘ <span>Developers</span></button>
+        <button class="nav-item" data-view="settings">⚙ <span>Settings</span></button>
+      </nav>
+      <div class="sidebar-bottom">
+        <div class="mode-card"><span class="status-dot"></span><div><strong id="mode-title">AELIA foundation</strong><small id="mode-sub">API-ready · connector-ready</small></div></div>
+        <button class="theme-link" data-action="toggle-theme">☼ Bright / Night</button>
+        <a class="whatsapp-link" href="mailto:hello@aeliaai.org.ng">✉ Contact AELIA by email</a>
+      </div>
+    </aside>
+    <main class="main">
+      <header class="topbar">
+        <button class="mobile-menu" data-action="toggle-sidebar">☰</button>
+        <div class="crumb" id="crumb">AELIA AI</div><nav class="public-nav"><button data-view="about">About</button><button data-view="blog">Blog</button><button data-view="docs">Docs</button><button data-view="developers">Developers</button><button data-view="connectors">Connectors</button><button data-view="pricing">Pricing</button><button data-view="contact">Contact</button></nav>
+        <div class="top-actions">
+          <span class="api-state" id="api-state"><i></i> Checking AELIA…</span>
+          <button class="icon-btn" data-action="command-palette" title="Command palette">⌘K</button>
+          <button class="profile" data-view="account"><span>AI</span><strong>Account</strong></button>
+        </div>
+      </header>
+      <section id="view" class="view"></section>
+    </main>
+  </div>
+  <div id="toast" class="toast"></div>
+  <div id="modal-root"></div>
+  <footer id="site-footer">
+    <div><strong>AELIA AI</strong><span>Light. Intelligence. Yours.</span></div>
+    <div><strong>Product</strong><button data-view="chat">Chat</button><button data-view="agents">Agents</button><button data-view="research">Research</button><button data-view="create">Create</button></div>
+    <div><strong>Developers</strong><button data-view="docs">Docs</button><button data-view="developers">API & SDKs</button><button data-view="connectors">Connectors</button><button data-view="blog-submit">Submit a blog</button></div>
+    <div><strong>Company</strong><button data-view="about">About</button><button data-view="feedback">Feedback</button><button data-view="legal">Terms & Privacy</button><button class="footer-link" data-view="admin">Admin</button><a href="mailto:hello@aeliaai.org.ng">Contact</a></div>
+    <div class="footer-bottom">© 2026 AELIA AI · <button data-view="legal">Terms</button> · <button data-view="legal">Privacy</button></div>
+  </footer>
+  <script src="./app.js"></script>
+  <script src="./public-enhancements.js"></script>
+</body>
+</html>
