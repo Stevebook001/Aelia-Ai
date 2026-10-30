@@ -5,6 +5,7 @@ import OpenAI from "openai";
 import pg from "pg";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+import {initCollabDb,handleCollabRequest} from "./collab.mjs";
 const {Pool}=pg;
 
 const PORT=Number(process.env.PORT||3000);
@@ -80,6 +81,7 @@ async function initDb(){
   await db.query(`ALTER TABLE aelia_blog_submissions ADD COLUMN IF NOT EXISTS reviewed_at TIMESTAMPTZ NULL`);
   await db.query(`ALTER TABLE aelia_blog_submissions ADD COLUMN IF NOT EXISTS published_at TIMESTAMPTZ NULL`);
   await db.query(`ALTER TABLE aelia_blog_submissions ADD COLUMN IF NOT EXISTS slug TEXT NULL`);
+  await initCollabDb(db);
 }
 function tokenFor(user){if(!JWT_SECRET)throw new Error("JWT_SECRET is not configured");return jwt.sign({sub:user.id,email:user.email},JWT_SECRET,{expiresIn:"30d"});}
 async function authUser(req){const h=req.headers.authorization||"";if(!h.startsWith("Bearer ")||!JWT_SECRET)return null;try{const p=jwt.verify(h.slice(7),JWT_SECRET);if(!db)return null;const r=await db.query("SELECT id,name,email,email_verified_at,created_at FROM aelia_users WHERE id=$1",[p.sub]);return r.rows[0]||null;}catch{return null;}}
@@ -120,6 +122,8 @@ const requestHandler=async(req,res)=>{
   try{
     const url=new URL(req.url||"/","http://aelia.local");
     if(url.pathname.startsWith("/api/")) url.pathname=url.pathname.slice(4);
+    const collabHandled=await handleCollabRequest(req,res,{db,authUser,sendEmail,adminEmail:ADMIN_EMAIL,chat,runAgent,capabilities});
+    if(collabHandled)return;
     if(url.pathname==="/mcp"){
       if(req.method==="GET")return send(res,200,{ok:true,service:"aelia-mcp",endpoint:"/mcp",protocol:"MCP Streamable HTTP",tools:["aelia_health","aelia_capabilities","aelia_agents"],note:"Read-only foundation tools are available; model actions require AELIA_MCP_API_KEY."});
       if(req.method!=="POST")return send(res,405,{error:"Use POST for MCP JSON-RPC requests."});
