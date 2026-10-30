@@ -22,6 +22,10 @@
   ],
   "rewrites": [
     {
+      "source": "/collaboration",
+      "destination": "/index.html"
+    },
+    {
       "source": "/",
       "has": [
         {
@@ -30,16 +34,6 @@
         }
       ],
       "destination": "/collab.html"
-    },
-    {
-      "source": "/collaboration",
-      "has": [
-        {
-          "type": "host",
-          "value": "developers.aeliaai.org.ng"
-        }
-      ],
-      "destination": "/collaboration-docs.html"
     },
     {
       "source": "/",
