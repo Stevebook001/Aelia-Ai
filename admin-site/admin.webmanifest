@@ -1,0 +1,20 @@
+{
+  "id": "/admin",
+  "name": "AELIA AI Admin Console",
+  "short_name": "AELIA Admin",
+  "description": "Private AELIA AI administration console",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#ffffff",
+  "theme_color": "#00d9e8",
+  "icons": [
+    {
+      "src": "/aelia-mark.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
