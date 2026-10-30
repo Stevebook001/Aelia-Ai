@@ -60,6 +60,12 @@ async function verifiedPartner(db,req){
  if(!r.rowCount||!safeEqual(hash(token),r.rows[0].key_hash))return null;
  return r.rows[0];
 }
+export async function authorizeMcpPartner(db,req,scope){
+ const partner=await verifiedPartner(db,req);if(!partner||!partner.scopes.includes(scope))return null;
+ const r=await db.query("INSERT INTO aelia_collab_usage_windows(credential_id,window_start,request_count) VALUES($1,date_trunc('minute',now()),1) ON CONFLICT(credential_id,window_start) DO UPDATE SET request_count=aelia_collab_usage_windows.request_count+1 WHERE aelia_collab_usage_windows.request_count<60 RETURNING request_count",[partner.id]);
+ if(!r.rowCount)return null;
+ await db.query("UPDATE aelia_collab_credentials SET last_used_at=now() WHERE id=$1",[partner.id]);return partner;
+}
 async function allowPartnerRequest(db,partner,scope,res){
  if(!partner.scopes.includes(scope)){json(res,403,{error:"This integration key does not have the required permission.",required_scope:scope});return false;}
  const r=await db.query(`INSERT INTO aelia_collab_usage_windows(credential_id,window_start,request_count)
