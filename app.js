@@ -189,6 +189,8 @@ window.addEventListener("popstate",syncRoute);
 function render(){document.body.classList.toggle("night",AELIA.theme==="night");document.body.classList.toggle("public-home",state.view==="home");const root=document.querySelector("#view");root.innerHTML=views[state.view]();updatePageMetadata();bind();if(state.view==="chat")scrollMessages();}
 
 const views={
+collab:()=>`<section class="public-page"><h1>AELIA Collaboration</h1><p>Loading verified partner portal…</p></section>`,
+collaborationDocs:()=>`<section class="public-page"><h1>AELIA Partner API</h1><p>Loading developer documentation…</p></section>`,
 home:()=>`
 <section class="oa-home">
   <nav class="oa-nav">
