@@ -26,6 +26,26 @@
       "has": [
         {
           "type": "host",
+          "value": "collab.aeliaai.org.ng"
+        }
+      ],
+      "destination": "/collab.html"
+    },
+    {
+      "source": "/collaboration",
+      "has": [
+        {
+          "type": "host",
+          "value": "developers.aeliaai.org.ng"
+        }
+      ],
+      "destination": "/collaboration-docs.html"
+    },
+    {
+      "source": "/",
+      "has": [
+        {
+          "type": "host",
           "value": "blogs.aeliaai.org.ng"
         }
       ],
