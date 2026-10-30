@@ -524,7 +524,7 @@ async function checkApi(){
   try{const r=await fetch(base+"/health");if(!r.ok)throw 0;const d=await r.json();el.innerHTML="<i></i> AELIA API online";el.classList.add("ok");const mt=document.querySelector("#mode-title"),ms=document.querySelector("#mode-sub");if(mt)mt.textContent=d.mode==="live"?"AELIA live runtime":"AELIA foundation";if(ms)ms.textContent=d.mode==="live"?"AI runtime connected":"API online · provider pending";}catch{el.innerHTML="<i></i> API unavailable";el.classList.remove("ok");}
 }
 window.addEventListener("keydown",e=>{if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==="k"){e.preventDefault();showCommandPalette();}});
-syncRoute();checkApi();
+setTimeout(()=>{syncRoute();checkApi();},0);
 async function verifyEmail(){
   const status=document.querySelector("#verify-status"); if(status)status.textContent="Verifying your AELIA email…";
   const token=new URLSearchParams(location.search).get("token");
@@ -571,7 +571,7 @@ async function loadCurrentUser(){
 }
 
 function startAeliaExperience(){
-  if(location.hostname==="collab.aeliaai.org.ng"||location.hostname==="dev.aeliaai.org.ng"||(location.pathname==="/collaboration"||location.pathname==="/collaboration/"))return;
+  if(["collab.aeliaai.org.ng","dev.aeliaai.org.ng","blogs.aeliaai.org.ng","developers.aeliaai.org.ng"].includes(location.hostname)||(location.pathname==="/collaboration"||location.pathname==="/collaboration/"))return;
   if(sessionStorage.getItem("aelia_boot_seen")) return;
   sessionStorage.setItem("aelia_boot_seen","1");
   const boot=document.createElement("div");
