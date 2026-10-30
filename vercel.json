@@ -179,5 +179,40 @@
       "source": "/verify-email",
       "destination": "/index.html"
     }
+  ],
+  "redirects": [
+    {
+      "source": "/",
+      "has": [
+        {
+          "type": "host",
+          "value": "collab.aeliaai.org.ng"
+        }
+      ],
+      "destination": "/collab.html",
+      "permanent": false
+    },
+    {
+      "source": "/",
+      "has": [
+        {
+          "type": "host",
+          "value": "blogs.aeliaai.org.ng"
+        }
+      ],
+      "destination": "/blogs.html",
+      "permanent": false
+    },
+    {
+      "source": "/",
+      "has": [
+        {
+          "type": "host",
+          "value": "api.aeliaai.org.ng"
+        }
+      ],
+      "destination": "/health",
+      "permanent": false
+    }
   ]
 }
