@@ -118,6 +118,7 @@ export async function handleCollabRequest(req,res,ctx){
   if(new Date(app.email_verification_expires_at)<new Date()||!safeEqual(hash(token),app.email_verification_hash))return json(res,400,{error:"Email verification link is invalid or expired."});
   const updated=await db.query("UPDATE aelia_collab_applications SET email_verified_at=now(),status=CASE WHEN domain_verified_at IS NOT NULL THEN 'pending_review' ELSE 'pending_verification' END,updated_at=now() WHERE id=$1 RETURNING status",[app.id]);
   await audit(db,"external",app.domain,"collaboration.contact_email.verified",app.id,{});
+  await alertAdmin(db,sendEmail,adminEmail,"AELIA partner contact verified","Partner contact email verified",app.organization_name+" has verified its organization contact email. DNS domain ownership remains "+(app.domain_verified_at?"verified":"pending")+".",app.id);
   if(updated.rows[0].status==="pending_review")await alertAdmin(db,sendEmail,adminEmail,"AELIA collaboration ready for review","Collaboration ownership verified",app.organization_name+" has verified both its contact email and DNS domain. The application is ready for manual approval.",app.id);
   return json(res,200,{ok:true,email_verified:true,status:updated.rows[0].status,message:updated.rows[0].status==="pending_review"?"Both ownership checks passed. The application is waiting for AELIA administrator approval.":"Email verified. Complete DNS ownership verification next."});
  }
@@ -135,6 +136,7 @@ export async function handleCollabRequest(req,res,ctx){
   if(!valid)return json(res,403,{verified:false,error:"The DNS TXT record does not match this application's verification challenge."});
   const updated=await db.query("UPDATE aelia_collab_applications SET domain_verified_at=now(),status=CASE WHEN email_verified_at IS NOT NULL THEN 'pending_review' ELSE 'pending_verification' END,updated_at=now() WHERE id=$1 RETURNING status",[app.id]);
   await audit(db,"external",app.domain,"collaboration.domain.verified",app.id,{});
+  await alertAdmin(db,sendEmail,adminEmail,"AELIA partner domain verified","Partner DNS ownership verified",app.organization_name+" has proven control of "+app.domain+" using its DNS TXT challenge. Contact email remains "+(app.email_verified_at?"verified":"pending")+".",app.id);
   if(updated.rows[0].status==="pending_review")await alertAdmin(db,sendEmail,adminEmail,"AELIA collaboration ready for review","Collaboration ownership verified",app.organization_name+" has verified both its contact email and DNS domain. The application is ready for manual approval.",app.id);
   return json(res,200,{ok:true,domain_verified:true,status:updated.rows[0].status,message:updated.rows[0].status==="pending_review"?"Both ownership checks passed. The application is waiting for AELIA administrator approval.":"Domain verified. Verify the contact email next."});
  }
