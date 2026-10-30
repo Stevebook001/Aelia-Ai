@@ -6,6 +6,7 @@ import pg from "pg";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import {initCollabDb,handleCollabRequest,authorizeMcpPartner} from "./collab.mjs";
+import {DEV_PAGE} from "./dev-page.mjs";
 const {Pool}=pg;
 
 const PORT=Number(process.env.PORT||3000);
@@ -121,7 +122,7 @@ function capabilities(){return ["chat","reason","memory","search","research","br
 
 const requestHandler=async(req,res)=>{
   const origin=String(req.headers.origin||"");
-  const ownOrigins=new Set(["https://aeliaai.org.ng","https://www.aeliaai.org.ng","https://admin.aeliaai.org.ng","https://collab.aeliaai.org.ng","https://developers.aeliaai.org.ng"]);
+  const ownOrigins=new Set(["https://aeliaai.org.ng","https://www.aeliaai.org.ng","https://admin.aeliaai.org.ng","https://collab.aeliaai.org.ng","https://developers.aeliaai.org.ng","https://dev.aeliaai.org.ng"]);
   if(origin&&ownOrigins.has(origin))res.__aeliaCorsOrigin=origin;
   else if(origin&&db){try{const parsed=new URL(origin),host=parsed.hostname.toLowerCase();if(parsed.protocol==="https:"){const allowed=await db.query("SELECT 1 FROM aelia_collab_applications a JOIN aelia_collab_credentials c ON c.application_id=a.id WHERE a.domain=$1 AND a.status=$2 AND c.status=$3 AND c.expires_at>now() LIMIT 1",[host,"approved","active"]);if(allowed.rowCount)res.__aeliaCorsOrigin=origin;}}catch{}}
   if(req.method==="OPTIONS"){send(res,res.__aeliaCorsOrigin?204:403,{});return;}
@@ -130,6 +131,7 @@ const requestHandler=async(req,res)=>{
     if(url.pathname.startsWith("/api/")) url.pathname=url.pathname.slice(4);
     const collabHandled=await handleCollabRequest(req,res,{db,authUser,sendEmail,adminEmail:ADMIN_EMAIL,chat,runAgent,capabilities});
     if(collabHandled)return;
+    if(req.method==="GET"&&url.pathname==="/"){res.writeHead(200,{"Content-Type":"text/html; charset=utf-8","Cache-Control":"public, max-age=300","X-Content-Type-Options":"nosniff","X-Frame-Options":"DENY","Referrer-Policy":"strict-origin-when-cross-origin"});res.end(DEV_PAGE);return;}
     if(url.pathname==="/mcp"){
       if(req.method==="GET")return send(res,200,{ok:true,service:"aelia-mcp",endpoint:"/mcp",protocol:"MCP Streamable HTTP",tools:["aelia_health","aelia_capabilities","aelia_agents","aelia_chat","aelia_run_agent"],authentication:"Approved AELIA partner credential required for chat and agent execution; scopes are enforced per tool.",note:"Partner ownership verification and manual administrator approval are mandatory before execution access is granted."});
       if(req.method!=="POST")return send(res,405,{error:"Use POST for MCP JSON-RPC requests."});
