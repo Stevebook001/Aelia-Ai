@@ -131,13 +131,13 @@ const requestHandler=async(req,res)=>{
     const collabHandled=await handleCollabRequest(req,res,{db,authUser,sendEmail,adminEmail:ADMIN_EMAIL,chat,runAgent,capabilities});
     if(collabHandled)return;
     if(url.pathname==="/mcp"){
-      if(req.method==="GET")return send(res,200,{ok:true,service:"aelia-mcp",endpoint:"/mcp",protocol:"MCP Streamable HTTP",tools:["aelia_health","aelia_capabilities","aelia_agents"],note:"Read-only foundation tools are available; model actions require AELIA_MCP_API_KEY."});
+      if(req.method==="GET")return send(res,200,{ok:true,service:"aelia-mcp",endpoint:"/mcp",protocol:"MCP Streamable HTTP",tools:["aelia_health","aelia_capabilities","aelia_agents","aelia_chat","aelia_run_agent"],authentication:"Approved AELIA partner credential required for chat and agent execution; scopes are enforced per tool.",note:"Partner ownership verification and manual administrator approval are mandatory before execution access is granted."});
       if(req.method!=="POST")return send(res,405,{error:"Use POST for MCP JSON-RPC requests."});
       const rpc=await body(req),id=rpc.id??null,method=String(rpc.method||"");
       if(rpc.jsonrpc!=="2.0"||!method)return send(res,400,{jsonrpc:"2.0",id,error:{code:-32600,message:"Invalid JSON-RPC request"}});
       if(method==="notifications/initialized"||method==="notifications/cancelled"){res.writeHead(202,{"Cache-Control":"no-store"});res.end();return;}
       if(method==="ping"){send(res,200,{jsonrpc:"2.0",id,result:{}});return;}
-      if(method==="initialize"){send(res,200,{jsonrpc:"2.0",id,result:{protocolVersion:"2025-03-26",capabilities:{tools:{listChanged:false}},serverInfo:{name:"aelia-mcp",version:"0.1.0"},instructions:"AELIA MCP exposes read-only health, capability and agent discovery tools. Chat and agent execution require a configured AELIA_MCP_API_KEY."}});return;}
+      if(method==="initialize"){send(res,200,{jsonrpc:"2.0",id,result:{protocolVersion:"2025-03-26",capabilities:{tools:{listChanged:false}},serverInfo:{name:"aelia-mcp",version:"0.1.0"},instructions:"AELIA MCP exposes public read-only health, capability and agent discovery. Chat and agent execution require a verified, approved AELIA partner credential with the matching scope."}});return;}
       if(method==="tools/list"){
         const tools=[
           {name:"aelia_health",description:"Read the AELIA API runtime health and enabled-service flags.",inputSchema:{type:"object",properties:{},additionalProperties:false}},
