@@ -22,6 +22,16 @@
   ],
   "rewrites": [
     {
+      "source": "/",
+      "has": [
+        {
+          "type": "host",
+          "value": "blogs.aeliaai.org.ng"
+        }
+      ],
+      "destination": "/blogs.html"
+    },
+    {
       "source": "/api/health",
       "destination": "https://aelia-api.vercel.app/health"
     },
