@@ -86,7 +86,8 @@ function websiteDomain(value){
 export async function handleCollabRequest(req,res,ctx){
  const {db,authUser,sendEmail,adminEmail,chat,runAgent,capabilities}=ctx;
  const url=new URL(req.url||"/","https://api.aeliaai.org.ng");
- const path=url.pathname;
+ let path=url.pathname;
+ if(path.startsWith("/api/"))path=path.slice(4);
  if(path==="/v1/collab"&&req.method==="GET")return json(res,200,{service:"AELIA Collaboration API",version:"1.0",application_endpoint:"/v1/collab/applications",ownership_proof:"DNS TXT and verified contact email are both mandatory",approval:"Manual AELIA administrator approval is mandatory",partner_api_base:"https://api.aeliaai.org.ng/v1/collab/v1",mcp_endpoint:"https://mcp.aeliaai.org.ng/mcp",documentation:"https://developers.aeliaai.org.ng/collaboration"});
  if(path==="/v1/collab/applications"&&req.method==="POST"){
   if(!db)return json(res,503,{error:"Collaboration database is unavailable."});
