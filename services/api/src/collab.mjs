@@ -6,7 +6,7 @@ const ALLOWED_SCOPES=new Set(["platform:read","capabilities:read","chat:execute"
 const hash=value=>crypto.createHash("sha256").update(String(value)).digest("hex");
 const safeEqual=(a,b)=>{const x=Buffer.from(String(a)),y=Buffer.from(String(b));return x.length===y.length&&crypto.timingSafeEqual(x,y);};
 const escapeHtml=value=>String(value??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-const json=(res,status,data)=>{res.writeHead(status,{"Content-Type":"application/json; charset=utf-8","Cache-Control":"no-store","X-Content-Type-Options":"nosniff"});res.end(JSON.stringify(data));};
+const json=(res,status,data)=>{const headers={"Content-Type":"application/json; charset=utf-8","Cache-Control":"no-store","X-Content-Type-Options":"nosniff","Access-Control-Allow-Headers":"Content-Type, Authorization","Access-Control-Allow-Methods":"GET,POST,PATCH,OPTIONS","Vary":"Origin"};if(res.__aeliaCorsOrigin)headers["Access-Control-Allow-Origin"]=res.__aeliaCorsOrigin;res.writeHead(status,headers);res.end(JSON.stringify(data));};
 const validEmail=value=>/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value||""));
 const validDomain=value=>{const d=String(value||"").toLowerCase().replace(/\.$/,"");return d.length<=253&&d.includes(".")&&!net.isIP(d)&&d.split(".").every(x=>/^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/.test(x))&&!["localhost","local","internal","test"].some(s=>d===s||d.endsWith("."+s))&&!/(^|\.)aeliaai\.org\.ng$/.test(d);};
 
