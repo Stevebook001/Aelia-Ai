@@ -5,7 +5,7 @@ import OpenAI from "openai";
 import pg from "pg";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-import {initCollabDb,handleCollabRequest} from "./collab.mjs";
+import {initCollabDb,handleCollabRequest,authorizeMcpPartner} from "./collab.mjs";
 const {Pool}=pg;
 
 const PORT=Number(process.env.PORT||3000);
@@ -138,7 +138,7 @@ const requestHandler=async(req,res)=>{
           {name:"aelia_capabilities",description:"List capability names currently declared by the AELIA API foundation.",inputSchema:{type:"object",properties:{},additionalProperties:false}},
           {name:"aelia_agents",description:"List AELIA agent names and whether the model runtime is live or in foundation mode.",inputSchema:{type:"object",properties:{},additionalProperties:false}}
         ];
-        if(MCP_API_KEY){tools.push({name:"aelia_chat",description:"Send a message to the AELIA chat runtime. Requires an authorized MCP bearer key.",inputSchema:{type:"object",properties:{message:{type:"string",minLength:1,maxLength:12000},model:{type:"string"}},required:["message"],additionalProperties:false}});tools.push({name:"aelia_run_agent",description:"Run an AELIA specialist agent. Requires an authorized MCP bearer key.",inputSchema:{type:"object",properties:{agent:{type:"string",enum:["chief","researcher","developer","operator"]},task:{type:"string",minLength:1,maxLength:12000}},required:["task"],additionalProperties:false}});}
+        if(MCP_API_KEY||db){tools.push({name:"aelia_chat",description:"Send a message to the AELIA chat runtime. Requires an authorized MCP bearer key.",inputSchema:{type:"object",properties:{message:{type:"string",minLength:1,maxLength:12000},model:{type:"string"}},required:["message"],additionalProperties:false}});tools.push({name:"aelia_run_agent",description:"Run an AELIA specialist agent. Requires an authorized MCP bearer key.",inputSchema:{type:"object",properties:{agent:{type:"string",enum:["chief","researcher","developer","operator"]},task:{type:"string",minLength:1,maxLength:12000}},required:["task"],additionalProperties:false}});}
         send(res,200,{jsonrpc:"2.0",id,result:{tools}});return;
       }
       if(method==="tools/call"){
@@ -148,7 +148,10 @@ const requestHandler=async(req,res)=>{
         if(name==="aelia_capabilities"){send(res,200,{jsonrpc:"2.0",id,result:asText({capabilities:capabilities(),version:"0.5"})});return;}
         if(name==="aelia_agents"){send(res,200,{jsonrpc:"2.0",id,result:asText({agents:Object.entries(AGENTS).map(([agent,a])=>({id:agent,name:a.name,status:client?"live":"foundation"}))})});return;}
         if(name==="aelia_chat"||name==="aelia_run_agent"){
-          if(!MCP_API_KEY||req.headers.authorization!=="Bearer "+MCP_API_KEY){send(res,200,{jsonrpc:"2.0",id,result:{isError:true,content:[{type:"text",text:"This MCP tool requires a valid AELIA MCP bearer key."}]}});return;}
+          const requiredScope=name==="aelia_chat"?"chat:execute":"agents:run";
+          let authorized=!!MCP_API_KEY&&req.headers.authorization==="Bearer "+MCP_API_KEY;
+          if(!authorized&&db)authorized=!!(await authorizeMcpPartner(db,req,requiredScope));
+          if(!authorized){send(res,200,{jsonrpc:"2.0",id,result:{isError:true,content:[{type:"text",text:"This MCP tool requires an approved AELIA partner credential with the required scope."}]}});return;}
           const result=name==="aelia_chat"?await chat(args):await runAgent(args);
           send(res,200,{jsonrpc:"2.0",id,result:asText(result)});return;
         }
