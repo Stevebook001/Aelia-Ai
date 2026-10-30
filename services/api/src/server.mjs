@@ -24,7 +24,9 @@ const db=DATABASE_URL?new Pool({connectionString:DATABASE_URL,ssl:!DATABASE_URL.
 const client=AI_API_KEY?new OpenAI({apiKey:AI_API_KEY,...(AI_BASE_URL?{baseURL:AI_BASE_URL}:{})}):null;
 
 function send(res,status,data){
-  res.writeHead(status,{"Content-Type":"application/json; charset=utf-8","Access-Control-Allow-Origin":CORS_ORIGIN,"Access-Control-Allow-Headers":"Content-Type, Authorization","Access-Control-Allow-Methods":"GET,POST,OPTIONS","X-Content-Type-Options":"nosniff","Cache-Control":"no-store"});
+  const headers={"Content-Type":"application/json; charset=utf-8","Access-Control-Allow-Headers":"Content-Type, Authorization","Access-Control-Allow-Methods":"GET,POST,PATCH,OPTIONS","X-Content-Type-Options":"nosniff","Cache-Control":"no-store","Vary":"Origin"};
+  if(res.__aeliaCorsOrigin)headers["Access-Control-Allow-Origin"]=res.__aeliaCorsOrigin;
+  res.writeHead(status,headers);
   res.end(JSON.stringify(data));
 }
 function body(req){return new Promise((resolve,reject)=>{let raw="";req.on("data",c=>{raw+=c;if(raw.length>2e6){req.destroy();reject(new Error("Payload too large"));}});req.on("end",()=>{try{resolve(raw?JSON.parse(raw):{})}catch(e){reject(e)}});req.on("error",reject);});}
@@ -118,7 +120,11 @@ async function runAgent(payload){
 function capabilities(){return ["chat","reason","memory","search","research","browser","files","documents","data-analysis","code","images","audio","video","translation","agents","multi-agent","projects","workflows","automation","scheduling","connectors","mcp","api","sdk","webhooks","audit","verification"];}
 
 const requestHandler=async(req,res)=>{
-  if(req.method==="OPTIONS"){send(res,204,{});return;}
+  const origin=String(req.headers.origin||"");
+  const ownOrigins=new Set(["https://aeliaai.org.ng","https://www.aeliaai.org.ng","https://admin.aeliaai.org.ng","https://collab.aeliaai.org.ng","https://developers.aeliaai.org.ng"]);
+  if(origin&&ownOrigins.has(origin))res.__aeliaCorsOrigin=origin;
+  else if(origin&&db){try{const parsed=new URL(origin),host=parsed.hostname.toLowerCase();if(parsed.protocol==="https:"){const allowed=await db.query("SELECT 1 FROM aelia_collab_applications a JOIN aelia_collab_credentials c ON c.application_id=a.id WHERE a.domain=$1 AND a.status=$2 AND c.status=$3 AND c.expires_at>now() LIMIT 1",[host,"approved","active"]);if(allowed.rowCount)res.__aeliaCorsOrigin=origin;}}catch{}}
+  if(req.method==="OPTIONS"){send(res,res.__aeliaCorsOrigin?204:403,{});return;}
   try{
     const url=new URL(req.url||"/","http://aelia.local");
     if(url.pathname.startsWith("/api/")) url.pathname=url.pathname.slice(4);
