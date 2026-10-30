@@ -571,6 +571,7 @@ async function loadCurrentUser(){
 }
 
 function startAeliaExperience(){
+  if(location.hostname==="collab.aeliaai.org.ng"||location.hostname==="dev.aeliaai.org.ng"||location.pathname.replace(/\\/$/,"")==="/collaboration")return;
   if(sessionStorage.getItem("aelia_boot_seen")) return;
   sessionStorage.setItem("aelia_boot_seen","1");
   const boot=document.createElement("div");
