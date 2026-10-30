@@ -101,23 +101,36 @@ if(!state.articleSlug)state.articleSlug=AELIA_BLOGS[0].slug;
 const sharedArticle=new URLSearchParams(location.search).get("article");
 if(sharedArticle && AELIA_BLOGS.some(x=>x.slug===sharedArticle)){state.articleSlug=sharedArticle;setView("article");}
 
-views.admin=()=>'<section class="public-page"><div class="page-head"><div><span class="eyebrow">ADMIN CONSOLE</span><h1>Editorial and feedback operations.</h1><p>Review submissions, publish approved articles and inspect incoming feedback. Admin access is enforced by the API using the configured administrator identity.</p></div><button class="btn" data-view="contact">Contact</button></div><div id="admin-status" class="panel">Loading admin data…</div><div class="contact-grid"><div class="panel"><h3>Blog submissions</h3><div id="admin-blogs"></div></div><div class="panel"><h3>Feedback</h3><div id="admin-feedback"></div></div></div></section>';
+views.admin=()=>'<section class="public-page"><div class="page-head"><div><span class="eyebrow">ADMIN CONSOLE · PRIVATE OPERATIONS</span><h1>Platform operations and partner trust.</h1><p>Review collaboration requests, verify partner ownership, manage security notifications, moderate submissions and inspect feedback. Every partner approval is manual.</p></div><button class="btn" data-view="contact">Contact</button></div><div id="admin-status" class="panel">Loading protected admin data…</div><div class="panel"><div class="row" style="display:flex;justify-content:space-between;align-items:center"><h3>Security & platform notifications</h3><button class="btn" data-notifications-read-all>Mark all read</button></div><div id="admin-notifications"></div></div><div class="panel"><h3>External platform collaboration requests</h3><p class="muted">An application can only be approved after both DNS domain ownership and contact-email ownership are verified.</p><div id="admin-collab"></div></div><div class="contact-grid"><div class="panel"><h3>Blog submissions</h3><div id="admin-blogs"></div></div><div class="panel"><h3>Feedback</h3><div id="admin-feedback"></div></div></div></section>';
 async function loadAdmin(){
- const token=localStorage.getItem("aelia_token")||"", headers=token?{Authorization:"Bearer "+token}:{};
- const status=document.querySelector("#admin-status"),blogs=document.querySelector("#admin-blogs"),feedback=document.querySelector("#admin-feedback");
+ const token=localStorage.getItem("aelia_token")||"",headers=token?{Authorization:"Bearer "+token}:{};
+ const status=document.querySelector("#admin-status"),blogs=document.querySelector("#admin-blogs"),feedback=document.querySelector("#admin-feedback"),notifications=document.querySelector("#admin-notifications"),collab=document.querySelector("#admin-collab");
+ if(!status)return;
  try{
-  const [b,f]=await Promise.all([fetch((AELIA.apiBase||"")+ "/v1/admin/blog-submissions",{headers}),fetch((AELIA.apiBase||"")+ "/v1/admin/feedback",{headers})]);
-  if(!b.ok||!f.ok)throw new Error("Admin authentication or API configuration is required.");
-  const bd=await b.json(),fd=await f.json();
-  status.textContent="Admin data loaded.";
+  const base=(AELIA.apiBase||"").replace(/\/$/,"");
+  const [b,f,n,c]=await Promise.all([
+   fetch(base+"/v1/admin/blog-submissions",{headers}),
+   fetch(base+"/v1/admin/feedback",{headers}),
+   fetch(base+"/v1/admin/notifications",{headers}),
+   fetch(base+"/v1/admin/collab-applications",{headers})
+  ]);
+  if([b,f,n,c].some(r=>!r.ok))throw new Error("Protected admin authentication or API configuration is required.");
+  const [bd,fd,nd,cd]=await Promise.all([b.json(),f.json(),n.json(),c.json()]);
+  status.textContent="Protected admin data loaded. "+(nd.unread_count||0)+" unread notifications · "+(cd.items||[]).filter(x=>x.status==="pending_review").length+" partner applications awaiting review.";
+  notifications.innerHTML=(nd.items||[]).map(x=>'<div class="admin-item"><strong>'+esc(x.title)+'</strong><small>'+esc(x.category)+' · '+esc(x.severity)+' · '+esc(new Date(x.created_at).toLocaleString())+'</small><p>'+esc(x.message)+'</p>'+(!x.read_at?'<button class="btn" data-notification-read="'+x.id+'">Mark read</button>':'<small>Read</small>')+'</div>').join("")||"<p>No notifications yet.</p>";
+  collab.innerHTML=(cd.items||[]).map(x=>{const ready=x.status==="pending_review"&&x.domain_verified_at&&x.email_verified_at;return '<div class="admin-item"><strong>'+esc(x.organization_name)+' · '+esc(x.domain)+'</strong><small>'+esc(x.status)+' · '+esc(x.contact_name)+' · '+esc(x.contact_email)+'</small><p>'+esc(x.purpose)+'</p><p><b>DNS ownership:</b> '+(x.domain_verified_at?'Verified':'Not verified')+' · <b>Contact email:</b> '+(x.email_verified_at?'Verified':'Not verified')+'</p><p><b>Requested scopes:</b> '+esc((x.requested_scopes||[]).join(", "))+'</p>'+(x.review_note?'<p><b>Review note:</b> '+esc(x.review_note)+'</p>':'')+(x.status==="pending_review"?'<div class="admin-actions"><button class="btn" data-collab-id="'+x.id+'" data-collab-decision="approve" '+(ready?'':'disabled')+'>Approve & issue scoped key</button><button class="btn" data-collab-id="'+x.id+'" data-collab-decision="reject">Reject</button></div>':'')+(x.status==="approved"?'<button class="btn" data-collab-id="'+x.id+'" data-collab-decision="suspend">Suspend & revoke keys</button>':'')+'</div>';}).join("")||"<p>No partner applications.</p>";
   blogs.innerHTML=(bd.items||[]).map(x=>'<div class="admin-item"><strong>'+esc(x.title)+'</strong><small>'+esc(x.author)+' · '+esc(x.status)+'</small><p>'+esc(x.content.slice(0,220))+'…</p><div class="admin-actions">'+["published","changes_requested","rejected"].map(st=>'<button class="btn" data-review-id="'+x.id+'" data-review-status="'+st+'">'+st.replace("_"," ")+'</button>').join("")+'</div></div>').join("")||"<p>No submissions.</p>";
   feedback.innerHTML=(fd.items||[]).map(x=>'<div class="admin-item"><strong>'+esc(x.type)+'</strong><small>'+esc(x.name)+' · '+esc(x.email)+'</small><p>'+esc(x.message)+'</p></div>').join("")||"<p>No feedback.</p>";
  }catch(e){status.textContent=e.message||"Could not load admin data.";}
 }
 document.addEventListener("click",async e=>{
- const b=e.target.closest("[data-review-id]"); if(!b)return;
- const token=localStorage.getItem("aelia_token")||"";
- try{const r=await fetch((AELIA.apiBase||"")+"/v1/admin/blog-submissions/"+b.dataset.reviewId+"/review",{method:"POST",headers:{"Content-Type":"application/json",Authorization:"Bearer "+token},body:JSON.stringify({status:b.dataset.reviewStatus,note:"Reviewed in AELIA Admin Console."})});const d=await r.json();if(!r.ok)throw new Error(d.error||"Review failed");toast("Submission updated");loadAdmin();}catch(err){toast(err.message||"Review failed");}
+ const review=e.target.closest("[data-review-id]");
+ if(review){const token=localStorage.getItem("aelia_token")||"";try{const r=await fetch((AELIA.apiBase||"")+"/v1/admin/blog-submissions/"+review.dataset.reviewId+"/review",{method:"POST",headers:{"Content-Type":"application/json",Authorization:"Bearer "+token},body:JSON.stringify({status:review.dataset.reviewStatus,note:"Reviewed in AELIA Admin Console."})});const d=await r.json();if(!r.ok)throw new Error(d.error||"Review failed");toast("Submission updated");loadAdmin();}catch(err){toast(err.message||"Review failed");}return;}
+ const decision=e.target.closest("[data-collab-decision]");
+ if(decision){const token=localStorage.getItem("aelia_token")||"",status=document.querySelector("#admin-status"),choice=decision.dataset.collabDecision;decision.disabled=true;try{const r=await fetch((AELIA.apiBase||"")+"/v1/admin/collab-applications/"+decision.dataset.collabId+"/decision",{method:"POST",headers:{"Content-Type":"application/json",Authorization:"Bearer "+token},body:JSON.stringify({decision:choice,note:"Reviewed in AELIA Admin Console."})});const d=await r.json();if(!r.ok)throw new Error(d.error||"Decision failed");if(d.api_key){status.innerHTML='<b>Integration approved. This API key is shown once—copy it now and store it in a secure secret manager.</b><code style="display:block;overflow-wrap:anywhere">'+esc(d.api_key)+'</code><p>Scopes: '+esc(d.scopes.join(", "))+' · Expires in '+d.expires_in_days+' days.</p>'; }else status.textContent="Partner application "+choice+" recorded. Active credentials have been revoked if suspended.";toast("Collaboration decision recorded");loadAdmin();}catch(err){status.textContent=err.message||"Decision failed";toast(status.textContent);}finally{decision.disabled=false;}return;}
+ const read=e.target.closest("[data-notification-read]");
+ if(read){const token=localStorage.getItem("aelia_token")||"";try{const r=await fetch((AELIA.apiBase||"")+"/v1/admin/notifications/"+read.dataset.notificationRead+"/read",{method:"PATCH",headers:{Authorization:"Bearer "+token}});if(!r.ok)throw new Error("Could not update notification");loadAdmin();}catch(err){toast(err.message);}return;}
+ if(e.target.closest("[data-notifications-read-all]")){const token=localStorage.getItem("aelia_token")||"";try{const r=await fetch((AELIA.apiBase||"")+"/v1/admin/notifications/read-all",{method:"PATCH",headers:{Authorization:"Bearer "+token}});if(!r.ok)throw new Error("Could not update notifications");loadAdmin();}catch(err){toast(err.message);}}
 });
 const _renderPublic=render;
 render=function(){_renderPublic();if(state.view==="admin")loadAdmin();};
