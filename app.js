@@ -38,9 +38,9 @@ function persist(){localStorage.setItem(AELIA.storageKey,JSON.stringify(state));
 function esc(s){return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#039;"}[c]));}
 function toast(msg){const el=document.querySelector("#toast");el.textContent=msg;el.classList.add("show");clearTimeout(window.__toast);window.__toast=setTimeout(()=>el.classList.remove("show"),2600);}
 function activeConv(){return state.conversations[0];}
-const ROUTES={home:"/",chat:"/chat",agents:"/agents",research:"/research",create:"/create",projects:"/projects",files:"/files",workflows:"/automations",connectors:"/connectors",channels:"/channels",developers:"/developers",settings:"/settings",account:"/account",blog:"/blog",about:"/about",contact:"/contact",legal:"/legal",pricing:"/pricing",docs:"/docs",business:"/business",company:"/company",status:"/status",feedback:"/feedback","blog-submit":"/blog-submit",admin:"/admin",verify:"/verify-email"};
+const ROUTES={home:"/",chat:"/chat",agents:"/agents",research:"/research",create:"/create",projects:"/projects",files:"/files",workflows:"/automations",connectors:"/connectors",channels:"/channels",developers:"/developers",settings:"/settings",account:"/account",blog:"/blog",about:"/about",contact:"/contact",legal:"/legal",pricing:"/pricing",docs:"/docs",business:"/business",company:"/company",status:"/status",feedback:"/feedback","blog-submit":"/blog-submit",admin:"/admin",collab:"/",collaborationDocs:"/collaboration",verify:"/verify-email"};
 const PATH_TO_VIEW=Object.fromEntries(Object.entries(ROUTES).map(([view,path])=>[path,view]));
-const labels={home:"Today",chat:"Chat & Reason",agents:"AELIA Agents",research:"Research",create:"Create",projects:"Projects",files:"Files & Knowledge",workflows:"Automations",connectors:"Connectors",channels:"Channels",developers:"Developers",settings:"Settings",account:"Account",blog:"Blog",about:"About",contact:"Contact",legal:"Terms & Policies",pricing:"Pricing",docs:"Docs",business:"Business",company:"Company",status:"System Status",feedback:"Feedback","blog-submit":"Submit a blog",admin:"Admin",verify:"Verify email"};
+const labels={home:"Today",chat:"Chat & Reason",agents:"AELIA Agents",research:"Research",create:"Create",projects:"Projects",files:"Files & Knowledge",workflows:"Automations",connectors:"Connectors",channels:"Channels",developers:"Developers",settings:"Settings",account:"Account",blog:"Blog",about:"About",contact:"Contact",legal:"Terms & Policies",pricing:"Pricing",docs:"Docs",business:"Business",company:"Company",status:"System Status",feedback:"Feedback","blog-submit":"Submit a blog",admin:"Admin",collab:"Collaboration",collaborationDocs:"Partner API Docs",verify:"Verify email"};
 function routeFor(view){return ROUTES[view]||"/";}
 function setView(view,options={}){state.view=view;document.querySelectorAll(".nav-item").forEach(x=>x.classList.toggle("active",x.dataset.view===view));document.querySelector("#crumb").textContent=labels[view]||"AELIA";render();if(options.push!==false){const target=routeFor(view);if(location.pathname!==target)history.pushState({view},"",target);}}
 const HOST_TO_VIEW={
@@ -63,7 +63,7 @@ const HOST_TO_VIEW={
   "videos.aeliaai.org.ng":"create",
   "photos.aeliaai.org.ng":"create",
   "music.aeliaai.org.ng":"create",
-  "collab.aeliaai.org.ng":"business",
+  "collab.aeliaai.org.ng":"collab",
   "plugin.aeliaai.org.ng":"connectors",
   "studio.aeliaai.org.ng":"create",
   "integrations.aeliaai.org.ng":"connectors",
