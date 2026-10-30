@@ -569,6 +569,7 @@ async function loadCurrentUser(){
 }
 
 function startAeliaExperience(){
+  if(location.hostname==="admin.aeliaai.org.ng")return;
   if(sessionStorage.getItem("aelia_boot_seen")) return;
   sessionStorage.setItem("aelia_boot_seen","1");
   const boot=document.createElement("div");
