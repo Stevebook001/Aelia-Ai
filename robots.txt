@@ -5,4 +5,4 @@ Disallow: /account
 Disallow: /settings
 Disallow: /verify-email
 
-Sitemap: https://aeliaai.org.ng/sitemap.xml
+Sitemap: https://www.aeliaai.org.ng/sitemap.xml

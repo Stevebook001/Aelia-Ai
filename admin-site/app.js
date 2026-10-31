@@ -1,11 +1,14 @@
+const storedModel=localStorage.getItem("aelia_model");
 const AELIA={
   apiBase:localStorage.getItem("aelia_api_base")||"/api",
-  model:localStorage.getItem("aelia_model")||"gpt-5.6-luna",
+  model:storedModel&&storedModel!=="gpt-5.6-luna"?storedModel:"gpt-5-mini",
   storageKey:"aelia_workspace_v2",
   theme:localStorage.getItem("aelia_theme")||"bright",
   token:localStorage.getItem("aelia_token")||"",
   user:JSON.parse(localStorage.getItem("aelia_user")||"null")
 };
+if(!storedModel||storedModel==="gpt-5.6-luna")localStorage.setItem("aelia_model",AELIA.model);
+document.querySelectorAll("[data-current-year]").forEach(node=>{node.textContent=String(new Date().getFullYear());});
 
 const saved=JSON.parse(localStorage.getItem(AELIA.storageKey)||"null");
 const state=saved||{
@@ -165,7 +168,7 @@ function updatePageMetadata(){
  const metaData=article?[article.title+" | AELIA AI",article.dek,article.image||"https://images.unsplash.com/photo-1677442136019-21780ecad995?auto=format&fit=crop&w=1200&h=630&q=85"]:hostMeta[prefix]&&location.pathname==="/" ? hostMeta[prefix] : (viewMeta[view]||viewMeta.home);
  const title=metaData[0],description=metaData[1],image=metaData[2];
  const privateHost=["ai","chat","console","workspace","auth","admin"].includes(prefix)||["chat","agents","projects","files","workflows","settings","account","admin","verify"].includes(view);
- const canonical=article?"https://aeliaai.org.ng/blog/"+article.slug:(privateHost?"https://aeliaai.org.ng":"https://"+host)+(location.pathname||"/");
+ const canonical=article?"https://www.aeliaai.org.ng/blog/"+article.slug:(privateHost?"https://aeliaai.org.ng":"https://"+host)+(location.pathname||"/");
  document.title=title;
  const meta=(selector,attr,value)=>{let el=document.querySelector(selector);if(!el){el=document.createElement("meta");const nm=selector.match(/name="([^"]+)"/),pr=selector.match(/property="([^"]+)"/);if(nm)el.name=nm[1];if(pr)el.setAttribute("property",pr[1]);document.head.appendChild(el);}el.setAttribute(attr,value);};
  meta('meta[name="description"]',"content",description);

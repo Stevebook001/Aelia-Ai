@@ -12,7 +12,7 @@ const {Pool}=pg;
 const PORT=Number(process.env.PORT||3000);
 const AI_API_KEY=process.env.AI_API_KEY||process.env.OPENAI_API_KEY||"";
 const AI_BASE_URL=process.env.AI_BASE_URL||"";
-const AI_MODEL=process.env.AI_MODEL||"gpt-5.6-luna";
+const AI_MODEL=process.env.AI_MODEL||"gpt-5-mini";
 const CORS_ORIGIN=process.env.CORS_ORIGIN||"*";
 const DATABASE_URL=process.env.DATABASE_URL||"";
 const JWT_SECRET=process.env.JWT_SECRET||"";
@@ -131,6 +131,8 @@ const requestHandler=async(req,res)=>{
     if(url.pathname.startsWith("/api/")) url.pathname=url.pathname.slice(4);
     const collabHandled=await handleCollabRequest(req,res,{db,authUser,sendEmail,adminEmail:ADMIN_EMAIL,chat,runAgent,capabilities});
     if(collabHandled)return;
+    const requestHost=String(req.headers["x-forwarded-host"]||req.headers.host||"").split(",")[0].trim().split(":")[0].toLowerCase();
+    if(req.method==="GET"&&url.pathname==="/"&&requestHost==="api.aeliaai.org.ng")return send(res,200,{ok:true,service:"aelia-api",version:"0.5",mode:client?"live":"foundation",database:!!db,email_provider:!!RESEND_API_KEY,endpoints:{health:"/health",capabilities:"/v1/capabilities",chat:"/v1/chat",agents:"/v1/agents/run",collaboration:"/v1/collab",mcp:"https://mcp.aeliaai.org.ng/mcp"}});
     if(req.method==="GET"&&url.pathname==="/"){res.writeHead(200,{"Content-Type":"text/html; charset=utf-8","Cache-Control":"public, max-age=300","X-Content-Type-Options":"nosniff","X-Frame-Options":"DENY","Referrer-Policy":"strict-origin-when-cross-origin"});res.end(DEV_PAGE);return;}
     if(url.pathname==="/mcp"){
       if(req.method==="GET")return send(res,200,{ok:true,service:"aelia-mcp",endpoint:"/mcp",protocol:"MCP Streamable HTTP",tools:["aelia_health","aelia_capabilities","aelia_agents","aelia_chat","aelia_run_agent"],authentication:"Approved AELIA partner credential required for chat and agent execution; scopes are enforced per tool.",note:"Partner ownership verification and manual administrator approval are mandatory before execution access is granted."});
