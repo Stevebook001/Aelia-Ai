@@ -26,6 +26,10 @@
       "destination": "/index.html"
     },
     {
+      "source": "/collab",
+      "destination": "/index.html"
+    },
+    {
       "source": "/",
       "has": [
         {
