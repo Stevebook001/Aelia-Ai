@@ -247,6 +247,17 @@
       ],
       "destination": "/health",
       "permanent": false
+    },
+    {
+      "source": "/:path*",
+      "has": [
+        {
+          "type": "host",
+          "value": "blog.aeliaai.org.ng"
+        }
+      ],
+      "destination": "https://blogs.aeliaai.org.ng/:path*",
+      "permanent": true
     }
   ]
 }
