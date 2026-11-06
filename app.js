@@ -48,6 +48,7 @@ const labels={home:"Today",chat:"Chat & Reason",agents:"AELIA Agents",research:"
 function routeFor(view){return ROUTES[view]||"/";}
 function setView(view,options={}){state.view=view;document.querySelectorAll(".nav-item").forEach(x=>x.classList.toggle("active",x.dataset.view===view));document.querySelector("#crumb").textContent=labels[view]||"AELIA";render();if(options.push!==false){const target=routeFor(view);if(location.pathname!==target)history.pushState({view},"",target);}}
 const HOST_TO_VIEW={
+  "app.aeliaai.org.ng":"chat",
   "www.aeliaai.org.ng":"home",
   "aeliaai.org.ng":"home",
   "ai.aeliaai.org.ng":"chat",
