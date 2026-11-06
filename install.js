@@ -1,14 +1,16 @@
 (()=>{
   const APP_HOST="app.aeliaai.org.ng";
-  if(location.hostname.toLowerCase()!==APP_HOST)return;
+  if(location.hostname.toLowerCase()!==APP_HOST){
+    if("serviceWorker"in navigator)navigator.serviceWorker.getRegistrations().then(registrations=>registrations.filter(reg=>new URL(reg.active?.scriptURL||reg.installing?.scriptURL||reg.waiting?.scriptURL||location.href).origin===location.origin&&reg.scope===location.origin+"/"&&reg.active?.scriptURL.endsWith("/sw.js")).forEach(reg=>reg.unregister())).catch(()=>{});
+    return;
+  }
   document.querySelectorAll("[data-current-year]").forEach(el=>el.textContent=String(new Date().getFullYear()));
   let installPrompt=null;
   const standalone=()=>window.matchMedia("(display-mode: standalone)").matches||window.navigator.standalone===true;
   const addButton=()=>{
     const host=document.querySelector(".top-actions")||document.querySelector(".oa-nav-actions");
     if(!host||document.querySelector("[data-aelia-install]"))return;
-    const button=document.createElement("button");
-    button.type="button";button.className="btn secondary aelia-install-button";button.dataset.aeliaInstall="";button.textContent="Install AELIA workspace";
+    const button=document.createElement("button");button.type="button";button.className="btn secondary aelia-install-button";button.dataset.aeliaInstall="";button.textContent="Install AELIA workspace";
     button.addEventListener("click",async()=>{
       if(installPrompt){installPrompt.prompt();const choice=await installPrompt.userChoice;installPrompt=null;if(choice?.outcome==="accepted")button.hidden=true;return;}
       const ios=/iphone|ipad|ipod/i.test(navigator.userAgent);
