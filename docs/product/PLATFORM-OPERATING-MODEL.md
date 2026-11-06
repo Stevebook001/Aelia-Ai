@@ -6,7 +6,7 @@ Status: product and architecture proposal; not a statement that every capability
 
 - `www.aeliaai.org.ng`: public marketing, product information, plans, trust and signup.
 - `app.aeliaai.org.ng`: primary authenticated, installable workspace. PWA start URL and scope must remain on this origin.
-- `chat.aeliaai.org.ng`: lightweight guest entry point. Guest access is limited by server-enforced quotas and abuse controls; signup offers account-backed history and continuity.
+- `chat.aeliaai.org.ng`: lightweight guest entry point. Guest access is limited by server-enforced quotas and abuse controls; a proposed initial allowance is five messages per rolling 24 hours, adjustable by platform policy and cost controls; signup offers account-backed history and continuity.
 - `admin.aeliaai.org.ng`: private operations and publishing administration. Keep Vercel Access/SSO in front as an outer control, then require application authentication, roles and audit logging.
 - `collab.aeliaai.org.ng`: authenticated partner portal for organizations and connected applications.
 - `blogs.aeliaai.org.ng`: canonical public publishing site for the currently established plural host. Treat `blog.aeliaai.org.ng` as an alias only after DNS and certificate ownership are verified; redirect it to the canonical host while preserving paths. Do not operate two independent CMS instances.
@@ -51,6 +51,7 @@ Email notifications should acknowledge receipt, provide a tracking reference and
 ## Collaboration portal
 
 Collaboration is more than an API-key request. Each organization should have:
+- Sign-up/sign-in and email verification for partner users, with an organization owner who can invite teammates and assign organization-level roles.
 - Organization profile, verified domain, owner and team membership.
 - Connected-app registry with app name, environment, redirect origins, callback URLs, status and last activity.
 - OAuth / API / MCP connection setup, scope selection, secret rotation and revocation.
