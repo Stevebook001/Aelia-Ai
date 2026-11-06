@@ -16,7 +16,7 @@ const AI_MODEL=process.env.AI_MODEL||"gpt-5-mini";
 const CORS_ORIGIN=process.env.CORS_ORIGIN||"*";
 const DATABASE_URL=process.env.DATABASE_URL||"";
 const JWT_SECRET=process.env.JWT_SECRET||"";
-const PUBLIC_APP_URL=(process.env.PUBLIC_APP_URL||"https://aeliaai.org.ng").replace(/\/$/,"");
+const PUBLIC_APP_URL=(process.env.PUBLIC_APP_URL||"https://app.aeliaai.org.ng").replace(/\/$/,"");
 const MAIL_FROM=process.env.MAIL_FROM||"AELIA AI <no-reply@aeliaai.org.ng>";
 const RESEND_API_KEY=process.env.RESEND_API_KEY||"";
 const MCP_API_KEY=process.env.AELIA_MCP_API_KEY||"";
@@ -122,7 +122,7 @@ function capabilities(){return ["chat","reason","memory","search","research","br
 
 const requestHandler=async(req,res)=>{
   const origin=String(req.headers.origin||"");
-  const ownOrigins=new Set(["https://aeliaai.org.ng","https://www.aeliaai.org.ng","https://admin.aeliaai.org.ng","https://collab.aeliaai.org.ng","https://developers.aeliaai.org.ng","https://dev.aeliaai.org.ng"]);
+  const ownOrigins=new Set(["https://aeliaai.org.ng","https://www.aeliaai.org.ng","https://app.aeliaai.org.ng","https://chat.aeliaai.org.ng","https://admin.aeliaai.org.ng","https://collab.aeliaai.org.ng","https://blogs.aeliaai.org.ng","https://developers.aeliaai.org.ng","https://dev.aeliaai.org.ng"]);
   if(origin&&ownOrigins.has(origin))res.__aeliaCorsOrigin=origin;
   else if(origin&&db){try{const parsed=new URL(origin),host=parsed.hostname.toLowerCase();if(parsed.protocol==="https:"){const allowed=await db.query("SELECT 1 FROM aelia_collab_applications a JOIN aelia_collab_credentials c ON c.application_id=a.id WHERE a.domain=$1 AND a.status=$2 AND c.status=$3 AND c.expires_at>now() LIMIT 1",[host,"approved","active"]);if(allowed.rowCount)res.__aeliaCorsOrigin=origin;}}catch{}}
   if(req.method==="OPTIONS"){send(res,res.__aeliaCorsOrigin?204:403,{});return;}
