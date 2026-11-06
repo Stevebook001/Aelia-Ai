@@ -430,9 +430,13 @@ async function sendChat(textValue){
   try{
     const base=(AELIA.apiBase||"").replace(/\/$/,"");if(!base)throw new Error("no api");
     const res=await fetch(base+"/v1/chat",{method:"POST",headers:{"Content-Type":"application/json",...(AELIA.token?{"Authorization":"Bearer "+AELIA.token}: {})},body:JSON.stringify({message:clean,model:AELIA.model,conversation_id:conv.id,history:conv.messages.slice(-12,-1)})});
-    if(!res.ok)throw new Error("API "+res.status);
-    const data=await res.json();pending.content=data.output||data.message||"AELIA returned an empty response.";
-  }catch(e){pending.content="AELIA foundation mode: your workspace received the request, but the production AI runtime is not connected yet. Connect api.aeliaai.org.ng and its server-side AI credentials to turn this into a live response."; }
+    const data=await res.json().catch(()=>({}));
+    if(!res.ok){const error=new Error(data.error||"API "+res.status);error.code=data.code;throw error;}
+    pending.content=data.output||data.message||"AELIA returned an empty response.";
+    if(data.guest_access)pending.content+="\\n\\n"+data.guest_access.remaining+" of "+data.guest_access.limit+" free guest messages remaining in this 24-hour window.";
+  }catch(e){
+    pending.content=e.code==="GUEST_LIMIT_REACHED"||e.code==="GUEST_LIMIT_UNAVAILABLE"?e.message:"AELIA foundation mode: your workspace received the request, but the production AI runtime is not connected yet. Connect api.aeliaai.org.ng and its server-side AI credentials to turn this into a live response.";
+  }
   persist();render();
 }
 function scrollMessages(){const m=document.querySelector("#messages");if(m)m.scrollTop=m.scrollHeight;}
