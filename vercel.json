@@ -22,6 +22,36 @@
   ],
   "rewrites": [
     {
+      "source": "/site.webmanifest",
+      "has": [
+        {
+          "type": "host",
+          "value": "app.aeliaai.org.ng"
+        }
+      ],
+      "destination": "/app.webmanifest"
+    },
+    {
+      "source": "/site.webmanifest",
+      "has": [
+        {
+          "type": "host",
+          "value": "www.aeliaai.org.ng"
+        }
+      ],
+      "destination": "/public.webmanifest"
+    },
+    {
+      "source": "/site.webmanifest",
+      "has": [
+        {
+          "type": "host",
+          "value": "aeliaai.org.ng"
+        }
+      ],
+      "destination": "/public.webmanifest"
+    },
+    {
       "source": "/collaboration",
       "destination": "/index.html"
     },
