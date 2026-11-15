@@ -120,4 +120,20 @@ CREATE INDEX IF NOT EXISTS aelia_core_audit_actor_time
 CREATE INDEX IF NOT EXISTS aelia_core_audit_resource
   ON aelia_core_audit_events(resource_type, resource_id, occurred_at DESC);
 
+-- Guard against accidental mutation of audit history. Database superusers can
+-- still administer the database; application roles should not own this table.
+CREATE OR REPLACE FUNCTION aelia_reject_core_audit_mutation()
+RETURNS trigger
+LANGUAGE plpgsql
+AS $
+BEGIN
+  RAISE EXCEPTION 'AELIA core audit events are append-only';
+END;
+$;
+
+DROP TRIGGER IF EXISTS aelia_core_audit_no_update ON aelia_core_audit_events;
+CREATE TRIGGER aelia_core_audit_no_update
+  BEFORE UPDATE OR DELETE ON aelia_core_audit_events
+  FOR EACH ROW EXECUTE FUNCTION aelia_reject_core_audit_mutation();
+
 COMMIT;
