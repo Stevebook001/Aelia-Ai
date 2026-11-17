@@ -37,7 +37,7 @@ These are working names, not claims of trained weights, benchmark results or pro
 
 - **No GPU purchase today.** First complete model selection, licence review, dataset plan and a reproducible local evaluation.
 - For a small inference pilot, use an on-demand 24–48 GB GPU and shut it down outside test windows. Confirm the live quote before launching.
-- A 24/7 RTX 4090 at $0.89/hour is approximately $648/month before storage, bandwidth and tax. A 48 GB L40 at $1.09/hour is approximately $796/month. An 80 GB A100 at $2.09/hour is approximately $1,526/month. These are illustrative calculations from current listed rates, not a purchase recommendation.
+- A 24/7 RTX 4090 at $0.89/hour is approximately $648/month before storage, bandwidth and tax. A 48 GB L40S at $1.09/hour is approximately $796/month. An 80 GB A100 at $2.09/hour is approximately $1,526/month. These are illustrative calculations from current listed rates, not a purchase recommendation.
 - Training a foundation model from scratch is not a small monthly subscription. It requires a large curated dataset, many high-memory GPUs, engineering time and repeated experiments. Start with a small open-weight model and fine-tune.
 
 ## Definition of done for an AELIA model release
