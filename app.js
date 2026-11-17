@@ -8,8 +8,8 @@ const AELIA={
   user:JSON.parse(localStorage.getItem("aelia_user")||"null")
 };
 if(!storedModel||storedModel==="gpt-5.6-luna")localStorage.setItem("aelia_model",AELIA.model);
-const handoffFromUrl=new URLSearchParams(location.search).get("handoff");
-if(handoffFromUrl){localStorage.setItem("aelia_handoff_token",handoffFromUrl);history.replaceState({},document.title,location.pathname+location.hash);}
+const handoffFromUrl=new URLSearchParams(location.search).get("handoff")||new URLSearchParams(location.hash.replace(/^#/,"")).get("handoff");
+if(handoffFromUrl){localStorage.setItem("aelia_handoff_token",handoffFromUrl);history.replaceState({},document.title,location.pathname+location.search);}
 let conversationSecret=localStorage.getItem("aelia_guest_conversation_secret")||"";
 let voicePeer=null,voiceStream=null,voiceAudio=null,voiceChannel=null;
 document.querySelectorAll("[data-current-year]").forEach(node=>{node.textContent=String(new Date().getFullYear());});
@@ -486,7 +486,7 @@ async function sendChat(textValue){
   }
   persist();render();
 }
-async function beginGuestHandoff(){try{const data=await postJSON("/v1/conversations/handoff",{conversation_id:activeConv().id,conversation_secret:conversationSecret});location.href="https://app.aeliaai.org.ng/account?handoff="+encodeURIComponent(data.handoff_token);}catch(error){toast(error.message||"Could not prepare the conversation handoff.");}}
+async function beginGuestHandoff(){try{const data=await postJSON("/v1/conversations/handoff",{conversation_id:activeConv().id,conversation_secret:conversationSecret});location.href="https://app.aeliaai.org.ng/account#handoff="+encodeURIComponent(data.handoff_token);}catch(error){toast(error.message||"Could not prepare the conversation handoff.");}}
 async function claimConversationHandoff(){const token=localStorage.getItem("aelia_handoff_token");if(!token||!AELIA.token)return false;try{const data=await postJSON("/v1/conversations/claim",{handoff_token:token});if(data.conversation){state.conversations=[{id:data.conversation.id,title:data.conversation.title||"Your conversation",messages:data.conversation.messages||[]}];state.guestGate=false;persist();}localStorage.removeItem("aelia_handoff_token");conversationSecret="";localStorage.removeItem("aelia_guest_conversation_secret");if(data.conversation){setView("chat");return true;}return false;}catch(error){toast("Conversation handoff: "+error.message);return false;}}
 async function loadCommunityPosts(){const root=document.querySelector("#community-feed");if(!root)return;try{const base=(AELIA.apiBase||"/api").replace(/\/$/,"");const response=await fetch(base+"/v1/community/posts");const data=await response.json();if(!response.ok)throw new Error(data.error||"Feed unavailable");root.innerHTML=(data.posts||[]).length?data.posts.map(post=>'<article class="panel community-post"><div class="post-author"><strong>'+esc(post.author_name||"AELIA member")+'</strong><small>'+new Date(post.created_at).toLocaleString()+'</small></div><p>'+esc(post.body)+'</p></article>').join(""):'<div class="empty">No community posts yet. Be the first to share an update.</div>';}catch(error){root.innerHTML='<div class="empty">'+esc(error.message||"Community feed unavailable.")+'</div>';}}
 async function publishCommunityPost(event){event.preventDefault();const form=event.currentTarget,status=document.querySelector("#community-status");try{await postJSON("/v1/community/posts",{body:document.querySelector("#community-post").value.trim()});form.reset();if(status)status.textContent="Your post is live in the AELIA community.";await loadCommunityPosts();}catch(error){if(status)status.textContent=error.message;toast("Post could not be published.");}}

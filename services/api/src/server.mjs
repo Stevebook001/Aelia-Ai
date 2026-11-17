@@ -13,6 +13,7 @@ const {Pool}=pg;
 const PORT=Number(process.env.PORT||3000);
 const AI_API_KEY=process.env.AI_API_KEY||process.env.OPENAI_API_KEY||"";
 const AI_BASE_URL=process.env.AI_BASE_URL||"";
+const OPENAI_API_KEY=process.env.OPENAI_API_KEY||(AI_BASE_URL?"":AI_API_KEY);
 const AI_MODEL=process.env.AI_MODEL||"gpt-5-mini";
 const CORS_ORIGIN=process.env.CORS_ORIGIN||"*";
 const DATABASE_URL=process.env.DATABASE_URL||"";
@@ -24,6 +25,7 @@ const MCP_API_KEY=process.env.AELIA_MCP_API_KEY||"";
 const ADMIN_EMAIL=process.env.ADMIN_EMAIL||"";
 const db=DATABASE_URL?new Pool({connectionString:DATABASE_URL,ssl:!DATABASE_URL.includes("localhost")&&!DATABASE_URL.includes("127.0.0.1")?{rejectUnauthorized:false}:undefined}):null;
 const client=AI_API_KEY?new OpenAI({apiKey:AI_API_KEY,...(AI_BASE_URL?{baseURL:AI_BASE_URL}:{})}):null;
+const mediaClient=OPENAI_API_KEY?new OpenAI({apiKey:OPENAI_API_KEY}):null;
 
 function send(res,status,data){
   const headers={"Content-Type":"application/json; charset=utf-8","Access-Control-Allow-Headers":"Content-Type, Authorization","Access-Control-Allow-Methods":"GET,POST,PATCH,OPTIONS","X-Content-Type-Options":"nosniff","Cache-Control":"no-store","Vary":"Origin"};
@@ -157,7 +159,7 @@ const requestHandler=async(req,res)=>{
   try{
     const url=new URL(req.url||"/","http://aelia.local");
     if(url.pathname.startsWith("/api/")) url.pathname=url.pathname.slice(4);
-    const journeyHandled=await handleJourneyRequest(req,res,{db,authUser,send,chat,consumeGuestChatQuota,client,aiApiKey:AI_API_KEY});
+    const journeyHandled=await handleJourneyRequest(req,res,{db,authUser,send,chat,consumeGuestChatQuota,openaiClient:mediaClient,openaiApiKey:OPENAI_API_KEY});
     if(journeyHandled)return;
     const collabHandled=await handleCollabRequest(req,res,{db,authUser,sendEmail,adminEmail:ADMIN_EMAIL,chat,runAgent,capabilities});
     if(collabHandled)return;
