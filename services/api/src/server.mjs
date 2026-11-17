@@ -6,6 +6,7 @@ import pg from "pg";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import {initCollabDb,handleCollabRequest,authorizeMcpPartner} from "./collab.mjs";
+import {initJourneyDb,handleJourneyRequest} from "./journey.mjs";
 import {DEV_PAGE} from "./dev-page.mjs";
 const {Pool}=pg;
 
@@ -90,6 +91,7 @@ async function initDb(){
   await db.query(`ALTER TABLE aelia_blog_submissions ADD COLUMN IF NOT EXISTS published_at TIMESTAMPTZ NULL`);
   await db.query(`ALTER TABLE aelia_blog_submissions ADD COLUMN IF NOT EXISTS slug TEXT NULL`);
   await initCollabDb(db);
+  await initJourneyDb(db);
 }
 function tokenFor(user){if(!JWT_SECRET)throw new Error("JWT_SECRET is not configured");return jwt.sign({sub:user.id,email:user.email},JWT_SECRET,{expiresIn:"30d"});}
 async function authUser(req){const h=req.headers.authorization||"";if(!h.startsWith("Bearer ")||!JWT_SECRET)return null;try{const p=jwt.verify(h.slice(7),JWT_SECRET);if(!db)return null;const r=await db.query("SELECT id,name,email,email_verified_at,created_at FROM aelia_users WHERE id=$1",[p.sub]);return r.rows[0]||null;}catch{return null;}}
@@ -146,13 +148,15 @@ function capabilities(){return ["chat","reason","memory","search","research","br
 
 const requestHandler=async(req,res)=>{
   const origin=String(req.headers.origin||"");
-  const ownOrigins=new Set(["https://aeliaai.org.ng","https://www.aeliaai.org.ng","https://app.aeliaai.org.ng","https://chat.aeliaai.org.ng","https://admin.aeliaai.org.ng","https://collab.aeliaai.org.ng","https://blogs.aeliaai.org.ng","https://developers.aeliaai.org.ng","https://dev.aeliaai.org.ng"]);
+  const ownOrigins=new Set(["https://aeliaai.org.ng","https://www.aeliaai.org.ng","https://app.aeliaai.org.ng","https://chat.aeliaai.org.ng","https://community.aeliaai.org.ng","https://admin.aeliaai.org.ng","https://collab.aeliaai.org.ng","https://blogs.aeliaai.org.ng","https://developers.aeliaai.org.ng","https://dev.aeliaai.org.ng"]);
   if(origin&&ownOrigins.has(origin))res.__aeliaCorsOrigin=origin;
   else if(origin&&db){try{const parsed=new URL(origin),host=parsed.hostname.toLowerCase();if(parsed.protocol==="https:"){const allowed=await db.query("SELECT 1 FROM aelia_collab_applications a JOIN aelia_collab_credentials c ON c.application_id=a.id WHERE a.domain=$1 AND a.status=$2 AND c.status=$3 AND c.expires_at>now() LIMIT 1",[host,"approved","active"]);if(allowed.rowCount)res.__aeliaCorsOrigin=origin;}}catch{}}
   if(req.method==="OPTIONS"){send(res,res.__aeliaCorsOrigin?204:403,{});return;}
   try{
     const url=new URL(req.url||"/","http://aelia.local");
     if(url.pathname.startsWith("/api/")) url.pathname=url.pathname.slice(4);
+    const journeyHandled=await handleJourneyRequest(req,res,{db,authUser,send,chat,consumeGuestChatQuota,client,aiApiKey:AI_API_KEY});
+    if(journeyHandled)return;
     const collabHandled=await handleCollabRequest(req,res,{db,authUser,sendEmail,adminEmail:ADMIN_EMAIL,chat,runAgent,capabilities});
     if(collabHandled)return;
     const requestHost=String(req.headers["x-forwarded-host"]||req.headers.host||"").split(",")[0].trim().split(":")[0].toLowerCase();
