@@ -457,11 +457,59 @@ business:()=>`<section class="public-page"><div class="page-head"><div><span cla
 status:()=>`<section class="public-page"><div class="page-head"><div><span class="eyebrow">AELIA STATUS</span><h1>System status</h1><p>Live service health will appear here as AELIA production services come online.</p></div></div><div class="feature-grid"><article class="feature-card"><b>Website</b><p>Public AELIA website and documentation.</p><span class="tag">Monitoring</span></article><article class="feature-card"><b>API</b><p>Authentication, chat and platform API health.</p><span class="tag">Monitoring</span></article><article class="feature-card"><b>Workspace</b><p>Chat, agents, files and projects.</p><span class="tag">Monitoring</span></article><article class="feature-card"><b>Connectors</b><p>External service connection health.</p><span class="tag">Monitoring</span></article></div></section>`,
 company:()=>`<section class="public-page"><div class="page-head"><div><span class="eyebrow">COMPANY</span><h1>AELIA AI — Light. Intelligence. Yours.</h1><p>Built by Novella Matrix · Lagos, Nigeria</p></div></div><div class="feature-grid"><article class="feature-card"><b>About Us</b><p>AELIA is being built as a real AI platform—not a decorative chatbot.</p></article><article class="feature-card"><b>Careers</b><p>Future roles across engineering, research, product, design, safety and operations.</p></article><article class="feature-card"><b>Contact</b><p>Questions, partnerships, press and support have a dedicated contact path.</p><button data-view="contact">Contact AELIA →</button></article><article class="feature-card"><b>Blog</b><p>Product, engineering, research and company updates.</p><button data-view="blog">Read the blog →</button></article></div></section>`,
 settings:()=>`
-  <div class="page-head"><div><h1>Settings</h1><p>Workspace configuration. Production identity and billing will move server-side.</p></div></div>
-  <div class="panel"><h3>AELIA identity</h3><p>Official product mail uses the current public domain aeliaai.org.ng.</p><div class="form-grid"><div class="field"><label>Display name</label><input value="Ibrahim Akanni Ahmad" id="display-name"></div><div class="field"><label>Primary product email</label><input value="hello@aeliaai.org" id="product-email"></div></div></div>
-  <div class="panel"><h3>AI connection</h3><p>The browser never receives a provider secret. Configure the API server environment instead.</p><div class="form-grid"><div class="field"><label>API base URL</label><input value="${esc(AELIA.apiBase)}" id="api-base"></div><div class="field"><label>Model</label><input value="${esc(AELIA.model)}" id="model-name"></div></div><div class="actions"><button class="btn primary" data-action="save-settings">Save settings</button></div></div>
-  <div class="panel"><h3>Official email aliases</h3><p>hello@aeliaai.org.ng · support@aeliaai.org.ng · admin@aeliaai.org.ng · security@aeliaai.org.ng · billing@aeliaai.org.ng · developers@aeliaai.org.ng · blogs@aeliaai.org.ng · no-reply@aeliaai.org.ng</p></div>
-  <div class="panel"><h3>Security</h3><p>Never paste API keys, SMTP passwords or payment secrets into GitHub source code. Put secrets in Vercel/Coolify environment variables.</p></div>
+  <section class="settings-page">
+    <div class="page-head"><div><span class="eyebrow">YOUR AELIA WORKSPACE</span><h1>Settings</h1><p>Control your workspace, model preferences, privacy and account experience.</p></div><span class="tag">Workspace settings</span></div>
+    <div class="panel">
+      <div class="panel-heading"><div><span class="eyebrow">PROFILE</span><h3>Personal details</h3></div><span class="tag">Local profile</span></div>
+      <p>Update the display preferences used in this browser. Verified account details remain managed by AELIA Identity.</p>
+      <div class="form-grid">
+        <div class="field"><label for="display-name">Display name</label><input id="display-name" value="${esc(AELIA.user?.name||localStorage.getItem("aelia_display_name")||"Ibrahim Akanni Ahmad")}" autocomplete="name"></div>
+        <div class="field"><label for="product-email">Contact email</label><input id="product-email" type="email" value="${esc(AELIA.user?.email||localStorage.getItem("aelia_contact_email")||"")}" placeholder="you@example.com" autocomplete="email"></div>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="panel-heading"><div><span class="eyebrow">MODEL STUDIO</span><h3>AI models and intelligence</h3></div><span class="tag">Model registry</span></div>
+      <p>AELIA is being designed to run its own model family. These are product targets, not claims that the models are already trained or available.</p>
+      <div class="quick-grid">
+        <article class="feature-card"><b>AELIA 5.4</b><p>Flagship general model · pre-training and evaluation roadmap.</p><span class="tag">Planned</span></article>
+        <article class="feature-card"><b>AELIA 5.4 Mini</b><p>Low-latency model for everyday chat and high-volume tasks.</p><span class="tag">First model target</span></article>
+        <article class="feature-card"><b>AELIA 5.4 Reasoning</b><p>Longer multi-step reasoning, coding and agent planning.</p><span class="tag">Planned</span></article>
+        <article class="feature-card"><b>AELIA 5.4 Vision</b><p>Image understanding and multimodal workflows.</p><span class="tag">Planned</span></article>
+      </div>
+      <div class="form-grid">
+        <div class="field"><label for="model-name">Active runtime model ID</label><input id="model-name" value="${esc(AELIA.model)}" placeholder="Configured on the AELIA API"></div>
+        <div class="field"><label for="api-base">AELIA API address</label><input id="api-base" value="${esc(AELIA.apiBase)}" placeholder="/api"></div>
+      </div>
+      <p class="muted">Provider credentials never belong in this browser. The API server can route to AELIA-hosted vLLM once our GPU inference service is provisioned. Until then, the live model shown by the API is the actual active runtime.</p>
+    </div>
+    <div class="panel">
+      <div class="panel-heading"><div><span class="eyebrow">APPEARANCE</span><h3>Theme and display</h3></div></div>
+      <p>Choose the workspace appearance on this device.</p>
+      <div class="actions"><button class="btn ${AELIA.theme==="bright"?"primary":""}" data-action="set-theme" data-theme="bright">☀ Bright</button><button class="btn ${AELIA.theme==="night"?"primary":""}" data-action="set-theme" data-theme="night">☾ Night</button></div>
+      <div class="form-grid">
+        <div class="field"><label for="language-pref">Preferred language</label><select id="language-pref"><option value="en">English</option><option value="ha">Hausa</option><option value="yo">Yorùbá</option><option value="ig">Igbo</option><option value="fr">French</option></select></div>
+        <div class="field"><label for="response-style">Response style</label><select id="response-style"><option value="balanced">Balanced</option><option value="concise">Concise</option><option value="detailed">Detailed</option><option value="technical">Technical</option></select></div>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="panel-heading"><div><span class="eyebrow">PRIVACY & MEMORY</span><h3>Your data controls</h3></div></div>
+      <div class="setting-row"><div><b>Conversation history</b><p>Keep conversations in this browser workspace.</p></div><input id="history-pref" type="checkbox" checked></div>
+      <div class="setting-row"><div><b>Personalization</b><p>Allow AELIA to use saved workspace preferences when available.</p></div><input id="memory-pref" type="checkbox" checked></div>
+      <div class="setting-row"><div><b>Product notifications</b><p>Show product and workspace notifications in this browser.</p></div><input id="notifications-pref" type="checkbox" checked></div>
+      <p class="muted">These switches save local preferences only. Account-wide retention, data export and deletion controls will be added when the server-side privacy endpoints are ready.</p>
+    </div>
+    <div class="panel">
+      <div class="panel-heading"><div><span class="eyebrow">CONNECTION</span><h3>Runtime and integrations</h3></div><span id="api-state" class="tag">Checking API…</span></div>
+      <p>Use one AELIA API gateway for chat, agents, files and model routing. Connectors will request explicit permissions and can be revoked independently.</p>
+      <div class="actions"><button class="btn" data-view="connectors">Manage connectors →</button><button class="btn" data-view="developers">Developer platform →</button><button class="btn" data-view="community">Community →</button></div>
+    </div>
+    <div class="panel">
+      <div class="panel-heading"><div><span class="eyebrow">SECURITY</span><h3>Account and sessions</h3></div></div>
+      <p>Never paste provider API keys, database passwords, OAuth client secrets or payment credentials into this page or GitHub. Store server secrets in the deployment environment and rotate any credential that has been exposed.</p>
+      <div class="actions"><button class="btn" data-view="account">Account and sign-in →</button><button class="btn" data-view="legal">Privacy and security →</button></div>
+    </div>
+    <div class="actions"><button class="btn primary" data-action="save-settings">Save workspace settings</button><span class="muted">Preferences are saved on this device.</span></div>
+  </section>
 `
 };
 
@@ -575,7 +623,7 @@ function actions(action,data){
   if(action==="quick-code"){state.tasks.unshift({id:crypto.randomUUID(),title:"Start a software build",status:"Next",priority:"High",agent:"Developer Agent"});save();setView("tasks");toast("Developer task created");return}
   if(action==="quick-organize"){state.tasks.unshift({id:crypto.randomUUID(),title:"Organize daily priorities",status:"Next",priority:"High",agent:"Workflow Operator"});save();setView("tasks");toast("Daily planning task created");return}
   if(action==="studio-demo"){toast("AI Studio foundation ready; modality providers come through adapters.");return}
-  if(action==="save-settings"){AELIA.apiBase=(document.querySelector("#api-base")?.value||"").trim();AELIA.model=(document.querySelector("#model-name")?.value||"gpt-5.6-luna").trim();localStorage.setItem("aelia_api_base",AELIA.apiBase);localStorage.setItem("aelia_model",AELIA.model);toast("AELIA settings saved.");checkApi();return;}
+  if(action==="save-settings"){AELIA.apiBase=(document.querySelector("#api-base")?.value||"/api").trim();AELIA.model=(document.querySelector("#model-name")?.value||"").trim();localStorage.setItem("aelia_api_base",AELIA.apiBase);localStorage.setItem("aelia_model",AELIA.model);localStorage.setItem("aelia_display_name",document.querySelector("#display-name")?.value||"");localStorage.setItem("aelia_contact_email",document.querySelector("#product-email")?.value||"");const prefs={language:document.querySelector("#language-pref")?.value||"en",responseStyle:document.querySelector("#response-style")?.value||"balanced",history:document.querySelector("#history-pref")?.checked!==false,memory:document.querySelector("#memory-pref")?.checked!==false,notifications:document.querySelector("#notifications-pref")?.checked!==false};localStorage.setItem("aelia_preferences",JSON.stringify(prefs));toast("Workspace preferences saved on this device.");checkApi();return;} if(action==="set-theme"){AELIA.theme=data.theme==="night"?"night":"bright";localStorage.setItem("aelia_theme",AELIA.theme);render();return;}
 }
 function showCommandPalette(){
   const root=document.querySelector("#modal-root");
