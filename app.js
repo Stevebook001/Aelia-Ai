@@ -476,7 +476,7 @@ async function sendChat(textValue){
   const pending={role:"assistant",content:"Thinking…"};conv.messages.push(pending);render();
   try{
     const base=(AELIA.apiBase||"").replace(/\/$/,"");if(!base)throw new Error("no api");
-    const res=await fetch(base+"/v1/chat",{method:"POST",headers:{"Content-Type":"application/json",...(AELIA.token?{"Authorization":"Bearer "+AELIA.token}: {})},body:JSON.stringify({message:clean,model:AELIA.model,conversation_id:conv.id,conversation_secret:conversationSecret,history:conv.messages.slice(-12,-1)})});
+    const res=await fetch(base+"/v1/chat",{method:"POST",headers:{"Content-Type":"application/json",...(AELIA.token?{"Authorization":"Bearer "+AELIA.token}: {})},body:JSON.stringify({message:clean,model:AELIA.model,conversation_id:conv.id,conversation_secret:conversationSecret,history:conv.messages.slice(0,-2).slice(-20)})});
     const data=await res.json().catch(()=>({}));
     if(!res.ok){const error=new Error(data.error||"API "+res.status);error.code=data.code;if(data.code==="GUEST_LIMIT_REACHED"){state.guestGate=true;conv.messages.pop();conv.messages.pop();}throw error;}
     pending.content=data.output||data.message||"AELIA returned an empty response.";

@@ -128,7 +128,9 @@ async function issueEmailToken(user,purpose){
 }
 async function chat(payload){
   if(!client)return {output:"AELIA API is online in foundation mode. Add a server-side AI_API_KEY/OPENAI_API_KEY to enable live model responses.",mode:"foundation",model:payload.model||AI_MODEL};
-  const response=await client.responses.create({model:payload.model||AI_MODEL,input:payload.message||"",store:false});
+  const history=Array.isArray(payload.history)?payload.history.slice(-20).filter(item=>item&&["user","assistant"].includes(item.role)&&typeof item.content==="string").map(item=>({role:item.role,content:item.content.slice(0,12000)})):[];
+  const input=[...history,{role:"user",content:payload.message||""}];
+  const response=await client.responses.create({model:payload.model||AI_MODEL,input,store:false});
   return {output:response.output_text||"No text returned.",mode:"live",model:payload.model||AI_MODEL};
 }
 const AGENTS={
