@@ -2,13 +2,22 @@
   "id": "/",
   "name": "AELIA AI",
   "short_name": "AELIA",
-  "description": "AELIA AI intelligence workspace",
+  "description": "AELIA AI — Light. Intelligence. Yours. Install this workspace on your phone, tablet or computer.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
+  "display_override": [
+    "standalone",
+    "minimal-ui"
+  ],
   "orientation": "any",
-  "background_color": "#ffffff",
-  "theme_color": "#00d9e8",
+  "background_color": "#f7fbff",
+  "theme_color": "#00cfe3",
+  "categories": [
+    "productivity",
+    "education",
+    "utilities"
+  ],
   "icons": [
     {
       "src": "/aelia-mark.svg",
