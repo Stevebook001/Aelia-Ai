@@ -8,6 +8,10 @@ const AELIA={
   user:JSON.parse(localStorage.getItem("aelia_user")||"null")
 };
 if(!storedModel||storedModel==="gpt-5.6-luna")localStorage.setItem("aelia_model",AELIA.model);
+const handoffFromUrl=new URLSearchParams(location.search).get("handoff")||new URLSearchParams(location.hash.replace(/^#/,"")).get("handoff");
+if(handoffFromUrl){localStorage.setItem("aelia_handoff_token",handoffFromUrl);history.replaceState({},document.title,location.pathname+location.search);}
+let conversationSecret=localStorage.getItem("aelia_guest_conversation_secret")||"";
+let voicePeer=null,voiceStream=null,voiceAudio=null,voiceChannel=null;
 document.querySelectorAll("[data-current-year]").forEach(node=>{node.textContent=String(new Date().getFullYear());});
 
 const saved=JSON.parse(localStorage.getItem(AELIA.storageKey)||"null");
@@ -38,16 +42,18 @@ const state=saved||{
 };
 
 function persist(){localStorage.setItem(AELIA.storageKey,JSON.stringify(state));} function save(){persist();}
+state.guestGate=Boolean(state.guestGate);
 function esc(s){return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#039;"}[c]));}
 function toast(msg){const el=document.querySelector("#toast");el.textContent=msg;el.classList.add("show");clearTimeout(window.__toast);window.__toast=setTimeout(()=>el.classList.remove("show"),2600);}
 function activeConv(){return state.conversations[0];}
-const ROUTES={home:"/",chat:"/chat",agents:"/agents",research:"/research",create:"/create",projects:"/projects",files:"/files",workflows:"/automations",connectors:"/connectors",channels:"/channels",developers:"/developers",settings:"/settings",account:"/account",blog:"/blog",about:"/about",contact:"/contact",legal:"/legal",pricing:"/pricing",docs:"/docs",business:"/business",company:"/company",status:"/status",feedback:"/feedback","blog-submit":"/blog-submit",admin:"/admin",collab:"/collab",collaborationDocs:"/collaboration",verify:"/verify-email"};
+const ROUTES={home:"/",chat:"/chat",agents:"/agents",research:"/research",create:"/create",projects:"/projects",files:"/files",workflows:"/automations",connectors:"/connectors",plugin:"/plugins",community:"/community",channels:"/channels",developers:"/developers",settings:"/settings",account:"/account",blog:"/blog",about:"/about",contact:"/contact",legal:"/legal",pricing:"/pricing",docs:"/docs",business:"/business",company:"/company",status:"/status",feedback:"/feedback","blog-submit":"/blog-submit",admin:"/admin",collab:"/collab",collaborationDocs:"/collaboration",verify:"/verify-email"};
 const PATH_TO_VIEW=Object.fromEntries(Object.entries(ROUTES).map(([view,path])=>[path,view]));
 PATH_TO_VIEW["/"]="home";
-const labels={home:"Today",chat:"Chat & Reason",agents:"AELIA Agents",research:"Research",create:"Create",projects:"Projects",files:"Files & Knowledge",workflows:"Automations",connectors:"Connectors",channels:"Channels",developers:"Developers",settings:"Settings",account:"Account",blog:"Blog",about:"About",contact:"Contact",legal:"Terms & Policies",pricing:"Pricing",docs:"Docs",business:"Business",company:"Company",status:"System Status",feedback:"Feedback","blog-submit":"Submit a blog",admin:"Admin",collab:"Collaboration",collaborationDocs:"Partner API Docs",verify:"Verify email"};
+const labels={home:"Today",chat:"Chat & Reason",agents:"AELIA Agents",research:"Research",create:"Create",projects:"Projects",files:"Files & Knowledge",workflows:"Automations",connectors:"Connectors",plugin:"Plugin Hub",community:"Community",channels:"Channels",developers:"Developers",settings:"Settings",account:"Account",blog:"Blog",about:"About",contact:"Contact",legal:"Terms & Policies",pricing:"Pricing",docs:"Docs",business:"Business",company:"Company",status:"System Status",feedback:"Feedback","blog-submit":"Submit a blog",admin:"Admin",collab:"Collaboration",collaborationDocs:"Partner API Docs",verify:"Verify email"};
 function routeFor(view){return ROUTES[view]||"/";}
 function setView(view,options={}){state.view=view;document.querySelectorAll(".nav-item").forEach(x=>x.classList.toggle("active",x.dataset.view===view));document.querySelector("#crumb").textContent=labels[view]||"AELIA";render();if(options.push!==false){const target=routeFor(view);if(location.pathname!==target)history.pushState({view},"",target);}}
 const HOST_TO_VIEW={
+  "app.aeliaai.org.ng":"chat",
   "www.aeliaai.org.ng":"home",
   "aeliaai.org.ng":"home",
   "ai.aeliaai.org.ng":"chat",
@@ -70,10 +76,10 @@ const HOST_TO_VIEW={
   "photos.aeliaai.org.ng":"create",
   "music.aeliaai.org.ng":"create",
   "collab.aeliaai.org.ng":"collab",
-  "plugin.aeliaai.org.ng":"connectors",
+  "plugin.aeliaai.org.ng":"plugin",
   "studio.aeliaai.org.ng":"create",
   "integrations.aeliaai.org.ng":"connectors",
-  "community.aeliaai.org.ng":"blog",
+  "community.aeliaai.org.ng":"community",
   "academy.aeliaai.org.ng":"docs",
   "labs.aeliaai.org.ng":"research",
   "translate.aeliaai.org.ng":"create",
@@ -129,46 +135,48 @@ function updatePageMetadata(){
  const host=location.hostname.toLowerCase(),view=state.view||"home",prefix=host.split(".")[0];
  const article=(view==="article"&&typeof AELIA_BLOGS!=="undefined")?AELIA_BLOGS.find(x=>x.slug===state.articleSlug):null;
  const viewMeta={
- home:["AELIA AI — Light. Intelligence. Yours.","One intelligence workspace for everything you want to build: chat, research, agents, files, coding, creation and connected workflows.","https://images.unsplash.com/photo-1677442136019-21780ecad995?auto=format&fit=crop&crop=entropy&w=1200&h=630&q=85"],
- about:["About AELIA AI — Our mission and product vision","Learn about AELIA AI, its product principles and the workspace being built for people, teams and developers.","https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&crop=entropy&w=1200&h=630&q=85"],
- blog:["AELIA AI Blog — Product, Agents and Engineering","Explore original AELIA articles on AI workspaces, agent permissions, developer infrastructure and building AI products.","https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&crop=entropy&w=1200&h=630&q=85"],
- docs:["AELIA AI Documentation — Guides and References","Find AELIA workspace guides, developer references, integration notes and product documentation.","https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&crop=entropy&w=1200&h=630&q=85"],
- developers:["AELIA AI Developer Platform — API and SDKs","Build with AELIA through APIs, SDKs, agent tools, connectors, asynchronous jobs and webhooks as services become available.","https://images.unsplash.com/photo-1555949963-ff9fe0c870eb?auto=format&fit=crop&crop=entropy&w=1200&h=630&q=85"],
- connectors:["AELIA AI Connectors — Integrations and Tools","Discover the connector architecture for connecting approved external tools to AELIA with clear permissions and scoped access.","https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&crop=entropy&w=1200&h=630&q=85"],
- pricing:["AELIA AI Pricing — Plans and Usage","Review AELIA's planned free, personal, developer and team product tiers. Final prices will be announced before billing launches.","https://images.unsplash.com/photo-1497366754035-f200968a6e72?auto=format&fit=crop&crop=entropy&w=1200&h=630&q=85"],
- business:["AELIA AI for Business — Teams and Workflows","Explore AELIA's planned team workspace, shared projects, governed connectors and business automation workflows.","https://images.unsplash.com/photo-1521737711867-e3b97375f902?auto=format&fit=crop&crop=entropy&w=1200&h=630&q=85"],
- research:["AELIA AI Research — Sources, Evidence and Findings","Learn how AELIA research workflows organize questions, source material, evidence and useful findings.","https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&crop=entropy&w=1200&h=630&q=85"],
- contact:["Contact AELIA AI — Product and Developer Support","Contact AELIA about product questions, partnerships, developer integrations, safety reports and support.","https://images.unsplash.com/photo-1497366754035-f200968a6e72?auto=format&fit=crop&crop=entropy&w=1200&h=630&q=85"],
- company:["AELIA AI — Company Information","Read about AELIA AI's mission, product direction, principles and contact channels.","https://images.unsplash.com/photo-1519389950473-47ba0277781c?auto=format&fit=crop&crop=entropy&w=1200&h=630&q=85"],
- legal:["AELIA AI — Privacy, Terms and Policies","Review AELIA's platform terms, privacy information, safety guidance and user policies.","https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?auto=format&fit=crop&crop=entropy&w=1200&h=630&q=85"],
- status:["AELIA AI Service Status — Platform Health","View AELIA's public service status and platform availability information.","https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&crop=entropy&w=1200&h=630&q=85"],
- chat:["AELIA AI Chat — Conversation and Reasoning","Open the AELIA conversation workspace for questions, drafting, reasoning and project work.","https://images.unsplash.com/photo-1677442136019-21780ecad995?auto=format&fit=crop&crop=entropy&w=1200&h=630&q=85"],
- agents:["AELIA AI Agents — Controlled Tool Execution","Explore AELIA agent workflows designed around tools, permissions, verification and review.","https://images.unsplash.com/photo-1485827404703-89b55fcc595e?auto=format&fit=crop&crop=entropy&w=1200&h=630&q=85"],
- create:["AELIA AI Create — Media and File Workflows","Explore AELIA's creation workspace for documents, images, audio, video and other assets as integrations become available.","https://images.unsplash.com/photo-1535223289827-42f1e9919769?auto=format&fit=crop&crop=entropy&w=1200&h=630&q=85"],
- projects:["AELIA AI Projects — Organize Your Work","Organize conversations, files, plans and related work in the AELIA project workspace.","https://images.unsplash.com/photo-1497366754035-f200968a6e72?auto=format&fit=crop&crop=entropy&w=1200&h=630&q=85"],
- files:["AELIA AI Files — Documents and Knowledge","Learn about AELIA file and knowledge workflows for workspace context and document handling.","https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&crop=entropy&w=1200&h=630&q=85"],
- workflows:["AELIA AI Automations — Tasks and Workflows","Explore the AELIA automation direction for repeatable tasks, background jobs and connected workflows.","https://images.unsplash.com/photo-1531482615713-2afd69097998?auto=format&fit=crop&crop=entropy&w=1200&h=630&q=85"],
- account:["AELIA AI Account — Sign In and Identity","Access AELIA account features. Authentication and account services may require a configured account.","https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?auto=format&fit=crop&crop=entropy&w=1200&h=630&q=85"],
- admin:["AELIA AI Admin Console — Private Operations","Private AELIA administration for authorized users, editorial review and platform operations.","https://images.unsplash.com/photo-1555949963-ff9fe0c870eb?auto=format&fit=crop&crop=entropy&w=1200&h=630&q=85"]
+ home:["AELIA AI — Light. Intelligence. Yours.","One intelligence workspace for everything you want to build: chat, research, agents, files, coding, creation and connected workflows.","https://www.aeliaai.org.ng/og-default.svg"],
+ about:["About AELIA AI — Our mission and product vision","Learn about AELIA AI, its product principles and the workspace being built for people, teams and developers.","https://www.aeliaai.org.ng/og-default.svg"],
+ blog:["AELIA AI Blog — Product, Agents and Engineering","Explore original AELIA articles on AI workspaces, agent permissions, developer infrastructure and building AI products.","https://www.aeliaai.org.ng/og-default.svg"],
+ docs:["AELIA AI Documentation — Guides and References","Find AELIA workspace guides, developer references, integration notes and product documentation.","https://www.aeliaai.org.ng/og-default.svg"],
+ developers:["AELIA AI Developer Platform — API and SDKs","Build with AELIA through APIs, SDKs, agent tools, connectors, asynchronous jobs and webhooks as services become available.","https://www.aeliaai.org.ng/og-default.svg"],
+ connectors:["AELIA AI Connectors — Integrations and Tools","Discover and build secure integrations for AELIA, including developer apps, APIs, MCP servers and scoped tools.","https://www.aeliaai.org.ng/og-default.svg"],
+ plugin:["AELIA AI Plugin Hub — Discover Extensions","Discover approved AELIA plugins and extensions, review permissions and connect tools to your workspace.","https://www.aeliaai.org.ng/og-default.svg"],
+ community:["AELIA AI Community — Groups and Teams","Create a community around your projects, invite your organisation and collaborate in shared group spaces.","https://www.aeliaai.org.ng/og-default.svg"],
+ pricing:["AELIA AI Pricing — Plans and Usage","Review AELIA's planned free, personal, developer and team product tiers. Final prices will be announced before billing launches.","https://www.aeliaai.org.ng/og-default.svg"],
+ business:["AELIA AI for Business — Teams and Workflows","Explore AELIA's planned team workspace, shared projects, governed connectors and business automation workflows.","https://www.aeliaai.org.ng/og-default.svg"],
+ research:["AELIA AI Research — Sources, Evidence and Findings","Learn how AELIA research workflows organize questions, source material, evidence and useful findings.","https://www.aeliaai.org.ng/og-default.svg"],
+ contact:["Contact AELIA AI — Product and Developer Support","Contact AELIA about product questions, partnerships, developer integrations, safety reports and support.","https://www.aeliaai.org.ng/og-default.svg"],
+ company:["AELIA AI — Company Information","Read about AELIA AI's mission, product direction, principles and contact channels.","https://www.aeliaai.org.ng/og-default.svg"],
+ legal:["AELIA AI — Privacy, Terms and Policies","Review AELIA's platform terms, privacy information, safety guidance and user policies.","https://www.aeliaai.org.ng/og-default.svg"],
+ status:["AELIA AI Service Status — Platform Health","View AELIA's public service status and platform availability information.","https://www.aeliaai.org.ng/og-default.svg"],
+ chat:["AELIA AI Chat — Conversation and Reasoning","Open the AELIA conversation workspace for questions, drafting, reasoning and project work.","https://www.aeliaai.org.ng/og-default.svg"],
+ agents:["AELIA AI Agents — Controlled Tool Execution","Explore AELIA agent workflows designed around tools, permissions, verification and review.","https://www.aeliaai.org.ng/og-default.svg"],
+ create:["AELIA AI Create — Media and File Workflows","Explore AELIA's creation workspace for documents, images, audio, video and other assets as integrations become available.","https://www.aeliaai.org.ng/og-default.svg"],
+ projects:["AELIA AI Projects — Organize Your Work","Organize conversations, files, plans and related work in the AELIA project workspace.","https://www.aeliaai.org.ng/og-default.svg"],
+ files:["AELIA AI Files — Documents and Knowledge","Learn about AELIA file and knowledge workflows for workspace context and document handling.","https://www.aeliaai.org.ng/og-default.svg"],
+ workflows:["AELIA AI Automations — Tasks and Workflows","Explore the AELIA automation direction for repeatable tasks, background jobs and connected workflows.","https://www.aeliaai.org.ng/og-default.svg"],
+ account:["AELIA AI Account — Sign In and Identity","Access AELIA account features. Authentication and account services may require a configured account.","https://www.aeliaai.org.ng/og-default.svg"],
+ admin:["AELIA AI Admin Console — Private Operations","Private AELIA administration for authorized users, editorial review and platform operations.","https://www.aeliaai.org.ng/og-default.svg"]
  };
  const hostMeta={
- videos:["AELIA AI Video Studio","Plan and manage AI video creation workflows, voice-over, rendering jobs and media exports.","https://images.unsplash.com/photo-1535223289827-42f1e9919769?auto=format&fit=crop&crop=entropy&w=1200&h=630&q=85"],
- photos:["AELIA AI Photo Studio","Explore image creation and photo workflows in the AELIA creation workspace.","https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&crop=entropy&w=1200&h=630&q=85"],
- music:["AELIA AI Music Studio","Explore AELIA music, song, audio and voice workflow plans as providers become available.","https://images.unsplash.com/photo-1516280440614-37939bbacd81?auto=format&fit=crop&crop=entropy&w=1200&h=630&q=85"],
- collab:["AELIA AI Collaboration","Coordinate shared projects, workspaces and integration ideas with AELIA collaboration surfaces.","https://images.unsplash.com/photo-1521737711867-e3b97375f902?auto=format&fit=crop&crop=entropy&w=1200&h=630&q=85"],
- plugin:["AELIA AI Plugin Hub","Explore plugin and connector integration patterns for extending AELIA with approved external tools.","https://images.unsplash.com/photo-1555949963-ff9fe0c870eb?auto=format&fit=crop&crop=entropy&w=1200&h=630&q=85"],
- studio:["AELIA AI Studio","Explore the AELIA creation workspace for documents, images, audio and media jobs.","https://images.unsplash.com/photo-1535223289827-42f1e9919769?auto=format&fit=crop&crop=entropy&w=1200&h=630&q=85"],
- integrations:["AELIA AI Integrations","Connect approved services through scoped tools, secure credentials and explicit permissions.","https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&crop=entropy&w=1200&h=630&q=85"],
- community:["AELIA AI Community","Read AELIA product notes and community updates about building useful AI workflows.","https://images.unsplash.com/photo-1519389950473-47ba0277781c?auto=format&fit=crop&crop=entropy&w=1200&h=630&q=85"],
- academy:["AELIA AI Academy","Learn AI workspace concepts, agent design, developer tools and integration fundamentals.","https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&crop=entropy&w=1200&h=630&q=85"],
- labs:["AELIA AI Labs","Explore experiments and research directions for AELIA AI capabilities.","https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&crop=entropy&w=1200&h=630&q=85"],
- translate:["AELIA AI Translation","Explore multilingual workflow plans for text, speech and language assistance.","https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&crop=entropy&w=1200&h=630&q=85"],
- voice:["AELIA AI Voice Studio","Explore voice and speech workflows, narration and audio generation plans.","https://images.unsplash.com/photo-1516280440614-37939bbacd81?auto=format&fit=crop&crop=entropy&w=1200&h=630&q=85"],
- billing:["AELIA AI Billing","Information about planned AELIA usage, plans and billing controls.","https://images.unsplash.com/photo-1497366754035-f200968a6e72?auto=format&fit=crop&crop=entropy&w=1200&h=630&q=85"],
- support:["AELIA AI Support","Get help with AELIA product questions, developer setup and account issues.","https://images.unsplash.com/photo-1497366754035-f200968a6e72?auto=format&fit=crop&crop=entropy&w=1200&h=630&q=85"],
- admin:["AELIA AI Admin Console","Private administration and editorial review tools for authorized AELIA operators.","https://images.unsplash.com/photo-1555949963-ff9fe0c870eb?auto=format&fit=crop&crop=entropy&w=1200&h=630&q=85"]
+ videos:["AELIA AI Video Studio","Plan and manage AI video creation workflows, voice-over, rendering jobs and media exports.","https://www.aeliaai.org.ng/og-default.svg"],
+ photos:["AELIA AI Photo Studio","Explore image creation and photo workflows in the AELIA creation workspace.","https://www.aeliaai.org.ng/og-default.svg"],
+ music:["AELIA AI Music Studio","Explore AELIA music, song, audio and voice workflow plans as providers become available.","https://www.aeliaai.org.ng/og-default.svg"],
+ collab:["AELIA AI Collaboration","Coordinate shared projects, workspaces and integration ideas with AELIA collaboration surfaces.","https://www.aeliaai.org.ng/og-default.svg"],
+ plugin:["AELIA AI Plugin Hub","Discover approved AELIA plugins and extensions, review permissions and connect tools to your workspace.","https://www.aeliaai.org.ng/og-default.svg"],
+ studio:["AELIA AI Studio","Explore the AELIA creation workspace for documents, images, audio and media jobs.","https://www.aeliaai.org.ng/og-default.svg"],
+ integrations:["AELIA AI Integrations","Connect approved services through scoped tools, secure credentials and explicit permissions.","https://www.aeliaai.org.ng/og-default.svg"],
+ community:["AELIA AI Community","Create group spaces, invite organisation members and collaborate in shared conversations.","https://www.aeliaai.org.ng/og-default.svg"],
+ academy:["AELIA AI Academy","Learn AI workspace concepts, agent design, developer tools and integration fundamentals.","https://www.aeliaai.org.ng/og-default.svg"],
+ labs:["AELIA AI Labs","Explore experiments and research directions for AELIA AI capabilities.","https://www.aeliaai.org.ng/og-default.svg"],
+ translate:["AELIA AI Translation","Explore multilingual workflow plans for text, speech and language assistance.","https://www.aeliaai.org.ng/og-default.svg"],
+ voice:["AELIA AI Voice Studio","Explore voice and speech workflows, narration and audio generation plans.","https://www.aeliaai.org.ng/og-default.svg"],
+ billing:["AELIA AI Billing","Information about planned AELIA usage, plans and billing controls.","https://www.aeliaai.org.ng/og-default.svg"],
+ support:["AELIA AI Support","Get help with AELIA product questions, developer setup and account issues.","https://www.aeliaai.org.ng/og-default.svg"],
+ admin:["AELIA AI Admin Console","Private administration and editorial review tools for authorized AELIA operators.","https://www.aeliaai.org.ng/og-default.svg"]
  };
- const metaData=article?[article.title+" | AELIA AI",article.dek,article.image||"https://images.unsplash.com/photo-1677442136019-21780ecad995?auto=format&fit=crop&w=1200&h=630&q=85"]:hostMeta[prefix]&&location.pathname==="/" ? hostMeta[prefix] : (viewMeta[view]||viewMeta.home);
+ const metaData=article?[article.title+" | AELIA AI",article.dek,article.image||"https://www.aeliaai.org.ng/og-default.svg"]:hostMeta[prefix]&&location.pathname==="/" ? hostMeta[prefix] : (viewMeta[view]||viewMeta.home);
  const title=metaData[0],description=metaData[1],image=metaData[2];
  const privateHost=["ai","chat","console","workspace","auth","admin"].includes(prefix)||["chat","agents","projects","files","workflows","settings","account","admin","verify"].includes(view);
  const canonical=article?"https://www.aeliaai.org.ng/blog/"+article.slug:(privateHost?"https://aeliaai.org.ng":"https://"+host)+(location.pathname||"/");
@@ -192,9 +200,10 @@ function updatePageMetadata(){
 }
 function syncRoute(){setView(viewFromPath(location.pathname),{push:false});}
 window.addEventListener("popstate",syncRoute);
-function render(){document.body.classList.toggle("night",AELIA.theme==="night");document.body.classList.toggle("public-home",state.view==="home");const root=document.querySelector("#view");root.innerHTML=views[state.view]();updatePageMetadata();bind();if(state.view==="chat")scrollMessages();}
+function render(){document.body.classList.toggle("night",AELIA.theme==="night");document.body.classList.toggle("public-home",state.view==="home");const root=document.querySelector("#view");root.innerHTML=views[state.view]();updatePageMetadata();bind();if(state.view==="chat")scrollMessages();if(state.view==="community")loadCommunityPosts();}
 
 const views={
+chat:()=>'<section class="chat-workspace"><div class="chat-toolbar"><div><span class="eyebrow">AELIA CHAT</span><h1>Chat &amp; Reason</h1><p>One conversation, carried with you across AELIA.</p></div><div class="actions"><button class="btn" data-action="start-voice">☎ Voice call</button><button class="btn" data-action="stop-voice">End call</button><button class="btn" data-action="new-chat">＋ New chat</button></div></div><div class="chat-panel"><div class="chat-head"><div><strong>'+esc(activeConv()?.title||"New conversation")+'</strong><small> · '+(AELIA.user?"Saved to your account":"Guest conversation · 5 free replies")+'</small></div><span class="tag">'+(AELIA.user?"Account":"Guest")+'</span></div><div id="messages" class="messages">'+(activeConv()?.messages||[]).map(m=>'<div class="msg '+(m.role==="user"?"user":"assistant")+'"><div class="bubble">'+esc(m.content)+(m.image?'<img class="chat-generated-image" src="'+m.image+'" alt="Generated by AELIA">':'')+'</div></div>').join('')+'</div>'+(state.guestGate&&!AELIA.user?'<div class="guest-gate"><div><span class="eyebrow">YOUR FIVE FREE REPLIES ARE USED</span><h2>Keep your conversation going.</h2><p>Create your free AELIA account. We’ll carry this conversation into your app workspace.</p></div><button class="btn primary" data-action="guest-signup">Continue with a free account →</button></div>':'')+'<form id="chat-form" class="composer"><textarea id="chat-input" placeholder="'+(AELIA.user?"Message AELIA…":"Ask AELIA anything · 5 free replies")+'" '+(state.guestGate&&!AELIA.user?"disabled":"")+'></textarea><button class="send" type="submit" '+(state.guestGate&&!AELIA.user?"disabled":"")+'>↑</button></form></div><div id="voice-status" class="voice-status" aria-live="polite"></div></section>',
 collab:()=>`<section class="public-page"><h1>AELIA Collaboration</h1><p>Loading verified partner portal…</p></section>`,
 collaborationDocs:()=>`<section class="public-page"><h1>AELIA Partner API</h1><p>Loading developer documentation…</p></section>`,
 home:()=>`
@@ -323,7 +332,8 @@ research:()=>`
   <div class="panel" style="margin-top:14px"><h3>Research prompt</h3><div class="field"><textarea id="research-input" rows="5" placeholder="What should AELIA research? Include the audience, date range and desired output."></textarea></div><div class="actions"><button class="btn primary" data-action="run-research">Queue research</button></div></div>
 `,
 create:()=>`
-  <div class="page-head"><div><h1>Create</h1><p>AELIA should be a creative workspace, not only a chatbot.</p></div></div>
+  <div class="page-head"><div><h1>Create</h1><p>Generate an image from a prompt, then continue working in the same AELIA workspace.</p></div></div>
+  <div class="panel image-generator"><h3>Image generation</h3><p>Image requests run through AELIA’s server-side provider. Provider credentials never reach the browser.</p><form id="image-form"><div class="field"><label for="image-prompt">Image prompt</label><textarea id="image-prompt" rows="3" maxlength="1800" required placeholder="A luminous infinity orbit above a calm futuristic Lagos skyline…"></textarea></div><div class="actions"><button class="btn primary" type="submit">✧ Generate image</button></div></form><p id="image-status" class="inline-status" aria-live="polite"></p><div id="generated-image"></div></div>
   <div class="grid">
     <article class="card feature"><div class="card-icon">✧</div><h3>Writing studio</h3><p>Draft, rewrite, summarize, translate and adapt content for different audiences.</p><span class="tag">Text</span></article>
     <article class="card feature"><div class="card-icon">▣</div><h3>Image studio</h3><p>Generate and edit visual concepts through a provider-neutral media layer.</p><span class="tag">Media</span></article>
@@ -364,10 +374,46 @@ TOOLS / CONNECTORS / WORKFLOWS
 VERIFICATION → RESPONSE → AUDIT</div></div>
 `,
 connectors:()=>`
-  <div class="page-head"><div><h1>Connector Hub</h1><p>Apps become AELIA capabilities through scoped permissions, authentication and health checks.</p></div><button class="btn primary" data-action="add-connector">＋ Add connector</button></div>
-  <div class="connector-grid">${state.connectors.map(c=>`<article class="card connector"><span class="state">${esc(c.status)}</span><div class="card-icon">${esc(c.icon)}</div><h3>${esc(c.name)}</h3><p>${esc(c.desc)}</p><div style="margin-top:14px"><button class="mini" data-action="connector" data-name="${esc(c.name)}">${c.status==="Connected"?"Manage":"Configure"}</button></div></article>`).join("")}</div>
-  <div class="panel" style="margin-top:14px"><h3>Connector contract</h3><p>Manifest → OAuth/API authentication → permissions → capability discovery → tool execution → health → audit → disconnect/revoke. AELIA should never silently gain access to an external account.</p></div>
+  <section class="public-page">
+    <div class="page-head"><div><span class="eyebrow">AELIA CONNECTOR ECOSYSTEM</span><h1>Connect the tools your work already depends on.</h1><p>Discover integrations, connect developer-built apps, and give AELIA agents carefully scoped capabilities. Every connection must be authorised, reviewable and revocable.</p></div><button class="btn primary" data-view="collab">Build or submit an integration →</button></div>
+    <div class="feature-grid">
+      <article class="feature-card"><b>Discover</b><h3>Integration directory</h3><p>Find first-party services, developer apps, APIs and MCP servers in one catalogue.</p></article>
+      <article class="feature-card"><b>Build</b><h3>Developer platform</h3><p>Register an app, publish a manifest, configure OAuth or API authentication and request only the scopes you need.</p></article>
+      <article class="feature-card"><b>Control</b><h3>Permissions and audit</h3><p>Users approve access explicitly, review tool actions and revoke credentials at any time.</p></article>
+    </div>
+    <div class="section-title"><div><h2>Featured integrations</h2><p>These are ecosystem targets and partner opportunities; a listing does not mean a live connection is already available.</p></div></div>
+    <div class="grid">
+      <article class="card feature"><div class="card-icon">GH</div><span class="tag">Planned</span><h3>GitHub</h3><p>Repositories, pull requests, issues, code review and development workflows.</p></article>
+      <article class="card feature"><div class="card-icon">G</div><span class="tag">Planned</span><h3>Google Workspace</h3><p>Drive, Gmail and Calendar through user-approved OAuth scopes.</p></article>
+      <article class="card feature"><div class="card-icon">M</div><span class="tag">Planned</span><h3>Microsoft 365</h3><p>Outlook, OneDrive and team productivity tools.</p></article>
+      <article class="card feature"><div class="card-icon">MCP</div><span class="tag">Protocol</span><h3>MCP servers</h3><p>Connect compatible tools through partner-scoped Model Context Protocol access.</p></article>
+      <article class="card feature"><div class="card-icon">API</div><span class="tag">Developer apps</span><h3>Custom API integrations</h3><p>Register REST APIs, import OpenAPI definitions and expose reviewed capabilities.</p></article>
+      <article class="card feature"><div class="card-icon">S</div><span class="tag">Partner onboarding</span><h3>SpyroChat</h3><p>Planned partner integration for bringing approved AELIA-powered bots into SpyroChat through its developer platform.</p><small>Partner domain: developer.spyrochat.org</small></article>
+    </div>
+    <div class="panel"><h3>How an integration becomes available</h3><div class="code">REGISTER APP → VERIFY DEVELOPER → SUBMIT MANIFEST → REQUEST SCOPES → SECURITY REVIEW → USER AUTHORISATION → CONNECT → AUDIT / REVOKE</div><p>External developers can begin with the AELIA partner application and developer documentation. We will not label an integration as connected until its credentials and tool execution have been tested.</p><button class="btn" data-view="developers">Open developer documentation →</button></div>
+  </section>
 `,
+plugin:()=>`
+  <section class="public-page">
+    <div class="page-head"><div><span class="eyebrow">AELIA PLUGIN HUB</span><h1>Extend your workspace with trusted capabilities.</h1><p>Discover plugins for AELIA chat, agents and workflows. Review what each plugin can access before enabling it.</p></div><button class="btn primary" data-view="connectors">Explore developer integrations →</button></div>
+    <div class="feature-grid">
+      <article class="feature-card"><b>Discover</b><h3>Browse plugins</h3><p>Find tools by category, publisher, compatibility and capability.</p></article>
+      <article class="feature-card"><b>Permissions</b><h3>Know what you enable</h3><p>Every plugin should disclose scopes, data access, side effects and publisher identity.</p></article>
+      <article class="feature-card"><b>Manage</b><h3>Control your plugins</h3><p>Enable, configure, inspect and revoke plugins from your workspace settings.</p></article>
+    </div>
+    <div class="section-title"><div><h2>Plugin categories</h2><p>The catalogue structure is being established; integrations will appear as they pass review and become operational.</p></div></div>
+    <div class="grid">
+      <article class="card feature"><span class="tag">Category</span><h3>Productivity</h3><p>Documents, calendars, email and task management.</p></article>
+      <article class="card feature"><span class="tag">Category</span><h3>Development</h3><p>Code hosting, deployment, databases and developer tools.</p></article>
+      <article class="card feature"><span class="tag">Category</span><h3>Research</h3><p>Search, knowledge sources, data analysis and citations.</p></article>
+      <article class="card feature"><span class="tag">Category</span><h3>Communication</h3><p>Team chat, community spaces, notifications and support.</p></article>
+      <article class="card feature"><span class="tag">Category</span><h3>Creation</h3><p>Image, video, audio, music and publishing workflows.</p></article>
+      <article class="card feature"><span class="tag">Category</span><h3>Business</h3><p>CRM, commerce, payments and operations.</p></article>
+    </div>
+    <div class="panel"><h3>For plugin developers</h3><p>Publish a connector manifest, document permissions and submit your integration for review.</p><button class="btn primary" data-view="collab">Apply to become a developer partner →</button></div>
+  </section>
+`,
+community:()=>'<section class="public-page"><div class="page-head"><div><span class="eyebrow">AELIA COMMUNITY</span><h1>Share what you’re building.</h1><p>Publish an update to the AELIA community. Posts are attached to your account.</p></div></div>'+(AELIA.user?'<form id="community-post-form" class="panel"><div class="field"><label for="community-post">Your post</label><textarea id="community-post" name="body" rows="4" maxlength="2000" required placeholder="Share a project update, question or idea…"></textarea></div><div class="actions"><button class="btn primary" type="submit">Publish post →</button></div><p id="community-status" class="inline-status" aria-live="polite"></p></form>':'<div class="panel"><h2>Join the conversation</h2><p>Sign in to publish a community post.</p><button class="btn primary" data-view="account">Sign in or create an account →</button></div>')+'<div class="section-title"><h2>Community posts</h2><p>Latest public updates</p></div><div id="community-feed" class="community-feed"><div class="empty">Loading community posts…</div></div></section>',
 developers:()=>`
   <div class="page-head"><div><h1>Developer Center</h1><p>Build AELIA into apps, agents and connected products.</p></div></div>
   <div class="grid"><article class="card feature"><div class="card-icon">⌘</div><h3>API</h3><p>Use AELIA as an intelligence and orchestration layer.</p><span class="tag">api.aeliaai.org</span></article><article class="card feature"><div class="card-icon">◈</div><h3>MCP</h3><p>Expose AELIA capabilities to compatible agent and tool clients.</p><span class="tag">mcp.aeliaai.org</span></article><article class="card feature"><div class="card-icon">⚡</div><h3>SDKs</h3><p>JavaScript, Python and future SDKs can share one provider-neutral contract.</p><span class="tag">Planned</span></article></div>
@@ -411,11 +457,59 @@ business:()=>`<section class="public-page"><div class="page-head"><div><span cla
 status:()=>`<section class="public-page"><div class="page-head"><div><span class="eyebrow">AELIA STATUS</span><h1>System status</h1><p>Live service health will appear here as AELIA production services come online.</p></div></div><div class="feature-grid"><article class="feature-card"><b>Website</b><p>Public AELIA website and documentation.</p><span class="tag">Monitoring</span></article><article class="feature-card"><b>API</b><p>Authentication, chat and platform API health.</p><span class="tag">Monitoring</span></article><article class="feature-card"><b>Workspace</b><p>Chat, agents, files and projects.</p><span class="tag">Monitoring</span></article><article class="feature-card"><b>Connectors</b><p>External service connection health.</p><span class="tag">Monitoring</span></article></div></section>`,
 company:()=>`<section class="public-page"><div class="page-head"><div><span class="eyebrow">COMPANY</span><h1>AELIA AI — Light. Intelligence. Yours.</h1><p>Built by Novella Matrix · Lagos, Nigeria</p></div></div><div class="feature-grid"><article class="feature-card"><b>About Us</b><p>AELIA is being built as a real AI platform—not a decorative chatbot.</p></article><article class="feature-card"><b>Careers</b><p>Future roles across engineering, research, product, design, safety and operations.</p></article><article class="feature-card"><b>Contact</b><p>Questions, partnerships, press and support have a dedicated contact path.</p><button data-view="contact">Contact AELIA →</button></article><article class="feature-card"><b>Blog</b><p>Product, engineering, research and company updates.</p><button data-view="blog">Read the blog →</button></article></div></section>`,
 settings:()=>`
-  <div class="page-head"><div><h1>Settings</h1><p>Workspace configuration. Production identity and billing will move server-side.</p></div></div>
-  <div class="panel"><h3>AELIA identity</h3><p>Official product mail uses the current public domain aeliaai.org.ng.</p><div class="form-grid"><div class="field"><label>Display name</label><input value="Ibrahim Akanni Ahmad" id="display-name"></div><div class="field"><label>Primary product email</label><input value="hello@aeliaai.org" id="product-email"></div></div></div>
-  <div class="panel"><h3>AI connection</h3><p>The browser never receives a provider secret. Configure the API server environment instead.</p><div class="form-grid"><div class="field"><label>API base URL</label><input value="${esc(AELIA.apiBase)}" id="api-base"></div><div class="field"><label>Model</label><input value="${esc(AELIA.model)}" id="model-name"></div></div><div class="actions"><button class="btn primary" data-action="save-settings">Save settings</button></div></div>
-  <div class="panel"><h3>Official email aliases</h3><p>hello@aeliaai.org.ng · support@aeliaai.org.ng · admin@aeliaai.org.ng · security@aeliaai.org.ng · billing@aeliaai.org.ng · developers@aeliaai.org.ng · blogs@aeliaai.org.ng · no-reply@aeliaai.org.ng</p></div>
-  <div class="panel"><h3>Security</h3><p>Never paste API keys, SMTP passwords or payment secrets into GitHub source code. Put secrets in Vercel/Coolify environment variables.</p></div>
+  <section class="settings-page">
+    <div class="page-head"><div><span class="eyebrow">YOUR AELIA WORKSPACE</span><h1>Settings</h1><p>Control your workspace, model preferences, privacy and account experience.</p></div><span class="tag">Workspace settings</span></div>
+    <div class="panel">
+      <div class="panel-heading"><div><span class="eyebrow">PROFILE</span><h3>Personal details</h3></div><span class="tag">Local profile</span></div>
+      <p>Update the display preferences used in this browser. Verified account details remain managed by AELIA Identity.</p>
+      <div class="form-grid">
+        <div class="field"><label for="display-name">Display name</label><input id="display-name" value="${esc(AELIA.user?.name||localStorage.getItem("aelia_display_name")||"Ibrahim Akanni Ahmad")}" autocomplete="name"></div>
+        <div class="field"><label for="product-email">Contact email</label><input id="product-email" type="email" value="${esc(AELIA.user?.email||localStorage.getItem("aelia_contact_email")||"")}" placeholder="you@example.com" autocomplete="email"></div>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="panel-heading"><div><span class="eyebrow">MODEL STUDIO</span><h3>AI models and intelligence</h3></div><span class="tag">Model registry</span></div>
+      <p>AELIA is being designed to run its own model family. These are product targets, not claims that the models are already trained or available.</p>
+      <div class="quick-grid">
+        <article class="feature-card"><b>AELIA 5.4</b><p>Flagship general model · pre-training and evaluation roadmap.</p><span class="tag">Planned</span></article>
+        <article class="feature-card"><b>AELIA 5.4 Mini</b><p>Low-latency model for everyday chat and high-volume tasks.</p><span class="tag">First model target</span></article>
+        <article class="feature-card"><b>AELIA 5.4 Reasoning</b><p>Longer multi-step reasoning, coding and agent planning.</p><span class="tag">Planned</span></article>
+        <article class="feature-card"><b>AELIA 5.4 Vision</b><p>Image understanding and multimodal workflows.</p><span class="tag">Planned</span></article>
+      </div>
+      <div class="form-grid">
+        <div class="field"><label for="model-name">Active runtime model ID</label><input id="model-name" value="${esc(AELIA.model)}" placeholder="Configured on the AELIA API"></div>
+        <div class="field"><label for="api-base">AELIA API address</label><input id="api-base" value="${esc(AELIA.apiBase)}" placeholder="/api"></div>
+      </div>
+      <p class="muted">Provider credentials never belong in this browser. The API server can route to AELIA-hosted vLLM once our GPU inference service is provisioned. Until then, the live model shown by the API is the actual active runtime.</p>
+    </div>
+    <div class="panel">
+      <div class="panel-heading"><div><span class="eyebrow">APPEARANCE</span><h3>Theme and display</h3></div></div>
+      <p>Choose the workspace appearance on this device.</p>
+      <div class="actions"><button class="btn ${AELIA.theme==="bright"?"primary":""}" data-action="set-theme" data-theme="bright">☀ Bright</button><button class="btn ${AELIA.theme==="night"?"primary":""}" data-action="set-theme" data-theme="night">☾ Night</button></div>
+      <div class="form-grid">
+        <div class="field"><label for="language-pref">Preferred language</label><select id="language-pref"><option value="en">English</option><option value="ha">Hausa</option><option value="yo">Yorùbá</option><option value="ig">Igbo</option><option value="fr">French</option></select></div>
+        <div class="field"><label for="response-style">Response style</label><select id="response-style"><option value="balanced">Balanced</option><option value="concise">Concise</option><option value="detailed">Detailed</option><option value="technical">Technical</option></select></div>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="panel-heading"><div><span class="eyebrow">PRIVACY & MEMORY</span><h3>Your data controls</h3></div></div>
+      <div class="setting-row"><div><b>Conversation history</b><p>Keep conversations in this browser workspace.</p></div><input id="history-pref" type="checkbox" checked></div>
+      <div class="setting-row"><div><b>Personalization</b><p>Allow AELIA to use saved workspace preferences when available.</p></div><input id="memory-pref" type="checkbox" checked></div>
+      <div class="setting-row"><div><b>Product notifications</b><p>Show product and workspace notifications in this browser.</p></div><input id="notifications-pref" type="checkbox" checked></div>
+      <p class="muted">These switches save local preferences only. Account-wide retention, data export and deletion controls will be added when the server-side privacy endpoints are ready.</p>
+    </div>
+    <div class="panel">
+      <div class="panel-heading"><div><span class="eyebrow">CONNECTION</span><h3>Runtime and integrations</h3></div><span id="api-state" class="tag">Checking API…</span></div>
+      <p>Use one AELIA API gateway for chat, agents, files and model routing. Connectors will request explicit permissions and can be revoked independently.</p>
+      <div class="actions"><button class="btn" data-view="connectors">Manage connectors →</button><button class="btn" data-view="developers">Developer platform →</button><button class="btn" data-view="community">Community →</button></div>
+    </div>
+    <div class="panel">
+      <div class="panel-heading"><div><span class="eyebrow">SECURITY</span><h3>Account and sessions</h3></div></div>
+      <p>Never paste provider API keys, database passwords, OAuth client secrets or payment credentials into this page or GitHub. Store server secrets in the deployment environment and rotate any credential that has been exposed.</p>
+      <div class="actions"><button class="btn" data-view="account">Account and sign-in →</button><button class="btn" data-view="legal">Privacy and security →</button></div>
+    </div>
+    <div class="actions"><button class="btn primary" data-action="save-settings">Save workspace settings</button><span class="muted">Preferences are saved on this device.</span></div>
+  </section>
 `
 };
 
@@ -423,22 +517,37 @@ async function postJSON(path,payload){const base=(AELIA.apiBase||"/api").replace
 async function submitFeedback(e){e.preventDefault();const f=e.currentTarget,s=document.querySelector("#feedback-status");try{await postJSON("/v1/feedback",Object.fromEntries(new FormData(f).entries()));s.textContent="Thanks. Your feedback has been submitted for review.";f.reset();toast("Feedback sent");}catch(err){s.textContent=err.message;}}
 async function submitBlog(e){e.preventDefault();const f=e.currentTarget,s=document.querySelector("#blog-status");try{await postJSON("/v1/blog-submissions",Object.fromEntries(new FormData(f).entries()));s.textContent="Submission received. AELIA will review it before publication. Target: 2–5 working days.";f.reset();toast("Blog submitted");}catch(err){s.textContent=err.message;}}
 async function sendChat(textValue){
-  const clean=textValue.trim();if(!clean)return;
+  const clean=textValue.trim();if(!clean||(!AELIA.user&&state.guestGate))return;
+  if(!conversationSecret){conversationSecret=crypto.randomUUID()+crypto.randomUUID();localStorage.setItem("aelia_guest_conversation_secret",conversationSecret);}
+  if(!activeConv().id)activeConv().id=crypto.randomUUID();
   const conv=activeConv();conv.messages.push({role:"user",content:clean});conv.title=clean.slice(0,42);persist();render();
   const pending={role:"assistant",content:"Thinking…"};conv.messages.push(pending);render();
   try{
     const base=(AELIA.apiBase||"").replace(/\/$/,"");if(!base)throw new Error("no api");
-    const res=await fetch(base+"/v1/chat",{method:"POST",headers:{"Content-Type":"application/json",...(AELIA.token?{"Authorization":"Bearer "+AELIA.token}: {})},body:JSON.stringify({message:clean,model:AELIA.model,conversation_id:conv.id,history:conv.messages.slice(-12,-1)})});
-    if(!res.ok)throw new Error("API "+res.status);
-    const data=await res.json();pending.content=data.output||data.message||"AELIA returned an empty response.";
-  }catch(e){pending.content="AELIA foundation mode: your workspace received the request, but the production AI runtime is not connected yet. Connect api.aeliaai.org.ng and its server-side AI credentials to turn this into a live response."; }
+    const res=await fetch(base+"/v1/chat",{method:"POST",headers:{"Content-Type":"application/json",...(AELIA.token?{"Authorization":"Bearer "+AELIA.token}: {})},body:JSON.stringify({message:clean,model:AELIA.model,conversation_id:conv.id,conversation_secret:conversationSecret,history:conv.messages.slice(0,-2).slice(-20)})});
+    const data=await res.json().catch(()=>({}));
+    if(!res.ok){const error=new Error(data.error||"API "+res.status);error.code=data.code;if(data.code==="GUEST_LIMIT_REACHED"){state.guestGate=true;conv.messages.pop();conv.messages.pop();}throw error;}
+    pending.content=data.output||data.message||"AELIA returned an empty response.";
+    if(data.guest_access)pending.content+="\n\n"+data.guest_access.remaining+" of "+data.guest_access.limit+" free guest messages remaining in this 24-hour window.";
+  }catch(e){
+    pending.content=e.code==="GUEST_LIMIT_REACHED"?"Your five free replies are complete. Create an account to continue with this conversation.":e.code==="GUEST_LIMIT_UNAVAILABLE"?e.message:"AELIA foundation mode: your workspace received the request, but the production AI runtime is not connected yet. Connect api.aeliaai.org.ng and its server-side AI credentials to turn this into a live response.";
+  }
   persist();render();
 }
+async function beginGuestHandoff(){try{const data=await postJSON("/v1/conversations/handoff",{conversation_id:activeConv().id,conversation_secret:conversationSecret});location.href="https://app.aeliaai.org.ng/account#handoff="+encodeURIComponent(data.handoff_token);}catch(error){toast(error.message||"Could not prepare the conversation handoff.");}}
+async function claimConversationHandoff(){const token=localStorage.getItem("aelia_handoff_token");if(!token||!AELIA.token)return false;try{const data=await postJSON("/v1/conversations/claim",{handoff_token:token});if(data.conversation){state.conversations=[{id:data.conversation.id,title:data.conversation.title||"Your conversation",messages:data.conversation.messages||[]}];state.guestGate=false;persist();}localStorage.removeItem("aelia_handoff_token");conversationSecret="";localStorage.removeItem("aelia_guest_conversation_secret");if(data.conversation){setView("chat");return true;}return false;}catch(error){toast("Conversation handoff: "+error.message);return false;}}
+async function loadCommunityPosts(){const root=document.querySelector("#community-feed");if(!root)return;try{const base=(AELIA.apiBase||"/api").replace(/\/$/,"");const response=await fetch(base+"/v1/community/posts");const data=await response.json();if(!response.ok)throw new Error(data.error||"Feed unavailable");root.innerHTML=(data.posts||[]).length?data.posts.map(post=>'<article class="panel community-post"><div class="post-author"><strong>'+esc(post.author_name||"AELIA member")+'</strong><small>'+new Date(post.created_at).toLocaleString()+'</small></div><p>'+esc(post.body)+'</p></article>').join(""):'<div class="empty">No community posts yet. Be the first to share an update.</div>';}catch(error){root.innerHTML='<div class="empty">'+esc(error.message||"Community feed unavailable.")+'</div>';}}
+async function publishCommunityPost(event){event.preventDefault();const form=event.currentTarget,status=document.querySelector("#community-status");try{await postJSON("/v1/community/posts",{body:document.querySelector("#community-post").value.trim()});form.reset();if(status)status.textContent="Your post is live in the AELIA community.";await loadCommunityPosts();}catch(error){if(status)status.textContent=error.message;toast("Post could not be published.");}}
+async function generateImage(){const prompt=document.querySelector("#image-prompt")?.value.trim(),status=document.querySelector("#image-status"),target=document.querySelector("#generated-image");if(!prompt)return;if(status)status.textContent="Generating your image…";try{const data=await postJSON("/v1/media/images",{prompt});if(!data.image)throw new Error("The image provider returned no image.");target.innerHTML='<img class="generated-image-preview" alt="Image generated by AELIA" src="'+data.image+'">';if(status)status.textContent="Image generated successfully.";}catch(error){if(status)status.textContent=error.message||"Image generation is unavailable.";toast("Image generation failed.");}}
+async function startVoiceCall(){const status=document.querySelector("#voice-status");if(!navigator.mediaDevices?.getUserMedia||!window.RTCPeerConnection){if(status)status.textContent="Voice calling requires a supported browser and microphone.";return;}try{if(status)status.textContent="Requesting microphone permission…";const data=await postJSON("/v1/realtime/client-secret",{});voiceStream=await navigator.mediaDevices.getUserMedia({audio:true});voicePeer=new RTCPeerConnection();voiceAudio=document.createElement("audio");voiceAudio.autoplay=true;voiceAudio.playsInline=true;document.body.appendChild(voiceAudio);voicePeer.ontrack=event=>{voiceAudio.srcObject=event.streams[0];};voiceStream.getTracks().forEach(track=>voicePeer.addTrack(track,voiceStream));voiceChannel=voicePeer.createDataChannel("oai-events");voiceChannel.onmessage=event=>{try{const payload=JSON.parse(event.data);if(payload.type==="error"&&status)status.textContent=payload.error?.message||"Voice session error.";}catch{}};const offer=await voicePeer.createOffer();await voicePeer.setLocalDescription(offer);const response=await fetch("https://api.openai.com/v1/realtime/calls",{method:"POST",headers:{"Authorization":"Bearer "+data.client_secret,"Content-Type":"application/sdp"},body:offer.sdp});if(!response.ok)throw new Error("Realtime connection failed ("+response.status+").");await voicePeer.setRemoteDescription({type:"answer",sdp:await response.text()});if(status)status.textContent="AELIA voice call connected. Speak naturally; your microphone is live.";toast("Voice call connected.");}catch(error){stopVoiceCall();if(status)status.textContent=error.message||"Voice call could not start.";toast("Voice call unavailable.");}}
+function stopVoiceCall(){if(voiceChannel){try{voiceChannel.close();}catch{}voiceChannel=null;}if(voicePeer){try{voicePeer.close();}catch{}voicePeer=null;}if(voiceStream){voiceStream.getTracks().forEach(track=>track.stop());voiceStream=null;}if(voiceAudio){voiceAudio.remove();voiceAudio=null;}const status=document.querySelector("#voice-status");if(status)status.textContent="Voice call ended.";}
 function scrollMessages(){const m=document.querySelector("#messages");if(m)m.scrollTop=m.scrollHeight;}
 function bind(){
   document.querySelectorAll("[data-view]").forEach(el=>el.addEventListener("click",()=>setView(el.dataset.view)));
   document.querySelectorAll("[data-action]").forEach(el=>el.addEventListener("click",()=>actions(el.dataset.action,el.dataset)));
   const form=document.querySelector("#chat-form");if(form)form.addEventListener("submit",e=>{e.preventDefault();const i=document.querySelector("#chat-input");sendChat(i.value);i.value="";});
+  const communityForm=document.querySelector("#community-post-form");if(communityForm)communityForm.addEventListener("submit",publishCommunityPost);
+  const imageForm=document.querySelector("#image-form");if(imageForm)imageForm.addEventListener("submit",e=>{e.preventDefault();generateImage();});
   const input=document.querySelector("#chat-input");if(input)input.addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();document.querySelector("#chat-form").requestSubmit();}});
   const authForm=document.querySelector("#auth-form");
   if(authForm)authForm.addEventListener("submit",async e=>{e.preventDefault();await submitAuth(document.querySelector("#auth-form").dataset.mode||"register");});
@@ -447,6 +556,9 @@ function bind(){
 }
 function actions(action,data){
   if(action==="verify-email"){verifyEmail();return;}
+  if(action==="guest-signup"){beginGuestHandoff();return;}
+  if(action==="start-voice"){startVoiceCall();return;}
+  if(action==="stop-voice"){stopVoiceCall();return;}
   if(action==="read-blog"){toast("AELIA article reader is being connected to the publishing CMS.");return;}
   if(action==="doc-jump"){document.getElementById(data.target)?.scrollIntoView({behavior:"smooth"});return;}
   if(action==="logout"){AELIA.token="";AELIA.user=null;localStorage.removeItem("aelia_token");localStorage.removeItem("aelia_user");toast("Signed out of AELIA.");setView("account");return;}
@@ -511,7 +623,7 @@ function actions(action,data){
   if(action==="quick-code"){state.tasks.unshift({id:crypto.randomUUID(),title:"Start a software build",status:"Next",priority:"High",agent:"Developer Agent"});save();setView("tasks");toast("Developer task created");return}
   if(action==="quick-organize"){state.tasks.unshift({id:crypto.randomUUID(),title:"Organize daily priorities",status:"Next",priority:"High",agent:"Workflow Operator"});save();setView("tasks");toast("Daily planning task created");return}
   if(action==="studio-demo"){toast("AI Studio foundation ready; modality providers come through adapters.");return}
-  if(action==="save-settings"){AELIA.apiBase=(document.querySelector("#api-base")?.value||"").trim();AELIA.model=(document.querySelector("#model-name")?.value||"gpt-5.6-luna").trim();localStorage.setItem("aelia_api_base",AELIA.apiBase);localStorage.setItem("aelia_model",AELIA.model);toast("AELIA settings saved.");checkApi();return;}
+  if(action==="save-settings"){AELIA.apiBase=(document.querySelector("#api-base")?.value||"/api").trim();AELIA.model=(document.querySelector("#model-name")?.value||"").trim();localStorage.setItem("aelia_api_base",AELIA.apiBase);localStorage.setItem("aelia_model",AELIA.model);localStorage.setItem("aelia_display_name",document.querySelector("#display-name")?.value||"");localStorage.setItem("aelia_contact_email",document.querySelector("#product-email")?.value||"");const prefs={language:document.querySelector("#language-pref")?.value||"en",responseStyle:document.querySelector("#response-style")?.value||"balanced",history:document.querySelector("#history-pref")?.checked!==false,memory:document.querySelector("#memory-pref")?.checked!==false,notifications:document.querySelector("#notifications-pref")?.checked!==false};localStorage.setItem("aelia_preferences",JSON.stringify(prefs));toast("Workspace preferences saved on this device.");checkApi();return;} if(action==="set-theme"){AELIA.theme=data.theme==="night"?"night":"bright";localStorage.setItem("aelia_theme",AELIA.theme);render();return;}
 }
 function showCommandPalette(){
   const root=document.querySelector("#modal-root");
@@ -530,7 +642,7 @@ async function checkApi(){
   try{const r=await fetch(base+"/health");if(!r.ok)throw 0;const d=await r.json();el.innerHTML="<i></i> AELIA API online";el.classList.add("ok");const mt=document.querySelector("#mode-title"),ms=document.querySelector("#mode-sub");if(mt)mt.textContent=d.mode==="live"?"AELIA live runtime":"AELIA foundation";if(ms)ms.textContent=d.mode==="live"?"AI runtime connected":"API online · provider pending";}catch{el.innerHTML="<i></i> API unavailable";el.classList.remove("ok");}
 }
 window.addEventListener("keydown",e=>{if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==="k"){e.preventDefault();showCommandPalette();}});
-setTimeout(()=>{syncRoute();checkApi();},0);
+setTimeout(()=>{syncRoute();checkApi();if(AELIA.token)loadCurrentUser().then(claimConversationHandoff);},0);
 async function verifyEmail(){
   const status=document.querySelector("#verify-status"); if(status)status.textContent="Verifying your AELIA email…";
   const token=new URLSearchParams(location.search).get("token");
@@ -541,7 +653,7 @@ async function verifyEmail(){
     const data=await res.json(); if(!res.ok)throw new Error(data.error||"Verification failed");
     AELIA.token=data.token;AELIA.user=data.user;localStorage.setItem("aelia_token",AELIA.token);localStorage.setItem("aelia_user",JSON.stringify(AELIA.user));
     if(status)status.textContent="Your email is verified. Your AELIA account is now active.";
-    toast("Email verified successfully.");
+    toast("Email verified successfully.");await claimConversationHandoff();
   }catch(e){if(status)status.textContent=e.message;toast("Email verification failed.");}
 }
 if(location.pathname==="/verify-email"){setView("verify");verifyEmail();}
@@ -559,7 +671,7 @@ async function submitAuth(mode){
     if(!res.ok){const err=new Error(data.error||data.message||"Authentication failed");err.code=data.code;throw err;}
     AELIA.token=data.token;AELIA.user=data.user;
     localStorage.setItem("aelia_token",AELIA.token);localStorage.setItem("aelia_user",JSON.stringify(AELIA.user));
-    toast("AELIA account ready.");setView("account");
+    toast("AELIA account ready.");const claimed=await claimConversationHandoff();if(!claimed)setView("account");
   }catch(e){
     if(status)status.textContent=e.message;
     if(e.code==="EMAIL_UNVERIFIED"){toast("Please verify your email first.");setTimeout(()=>setView("account"),250);}
@@ -576,19 +688,5 @@ async function loadCurrentUser(){
   }catch(e){AELIA.token="";AELIA.user=null;localStorage.removeItem("aelia_token");localStorage.removeItem("aelia_user");render();toast("Please sign in again.");}
 }
 
-function startAeliaExperience(){
-  if(["collab.aeliaai.org.ng","dev.aeliaai.org.ng","blogs.aeliaai.org.ng","developers.aeliaai.org.ng"].includes(location.hostname)||(location.pathname==="/collaboration"||location.pathname==="/collaboration/"))return;
-  if(sessionStorage.getItem("aelia_boot_seen")) return;
-  sessionStorage.setItem("aelia_boot_seen","1");
-  const boot=document.createElement("div");
-  boot.id="aelia-boot";
-  boot.innerHTML='<div class="boot-shell"><div class="boot-mark"><span class="boot-orbit"></span><span class="boot-core">A</span></div><div class="boot-kicker">AELIA AI</div><h2>Light. Intelligence. Yours.</h2><p id="boot-status">Waking your workspace…</p><div class="boot-track"><span></span></div><div class="boot-steps"><span data-step="1">Identity</span><span data-step="2">Workspace</span><span data-step="3">Intelligence</span><span data-step="4">Connectors</span></div><button class="btn primary" id="boot-enter" style="display:none">Enter AELIA →</button></div>';
-  document.body.appendChild(boot);
-  const status=boot.querySelector("#boot-status");
-  const steps=[["1","Checking secure identity layer…"],["2","Preparing your AI workspace…"],["3","Warming reasoning and agent runtime…"],["4","Loading connector-ready capabilities…"],["5","AELIA is ready."]];
-  let i=0;
-  const tick=()=>{if(i<steps.length){status.textContent=steps[i][1];boot.querySelectorAll("[data-step]").forEach(x=>x.classList.toggle("live",x.dataset.step===steps[i][0]));i++;setTimeout(tick,650)}else{status.textContent="Your workspace is ready.";boot.querySelector("#boot-enter").style.display="inline-flex";}};
-  boot.querySelector("#boot-enter").addEventListener("click",()=>{boot.classList.add("leave");setTimeout(()=>boot.remove(),500)});
-  tick();
-}
-startAeliaExperience();
+// The previous full-screen 'Enter AELIA' interstitial was removed; render the product immediately.
+

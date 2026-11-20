@@ -1,0 +1,40 @@
+{
+  "id": "/",
+  "name": "AELIA AI Workspace",
+  "short_name": "AELIA",
+  "description": "Your personal AELIA AI workspace for chat, research, agents, files and creation.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "display_override": [
+    "standalone",
+    "minimal-ui"
+  ],
+  "orientation": "any",
+  "background_color": "#f7fbff",
+  "theme_color": "#00cfe3",
+  "categories": [
+    "productivity",
+    "utilities"
+  ],
+  "icons": [
+    {
+      "src": "/aelia-mark.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "New chat",
+      "short_name": "Chat",
+      "url": "/chat"
+    },
+    {
+      "name": "Research",
+      "short_name": "Research",
+      "url": "/research"
+    }
+  ]
+}

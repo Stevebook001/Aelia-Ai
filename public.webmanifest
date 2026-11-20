@@ -1,0 +1,28 @@
+{
+  "id": "/",
+  "name": "AELIA AI",
+  "short_name": "AELIA",
+  "description": "AELIA AI — Light. Intelligence. Yours.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "display_override": [
+    "standalone",
+    "minimal-ui"
+  ],
+  "orientation": "any",
+  "background_color": "#ffffff",
+  "theme_color": "#00cfe3",
+  "categories": [
+    "productivity",
+    "education"
+  ],
+  "icons": [
+    {
+      "src": "/aelia-mark.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

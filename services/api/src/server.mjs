@@ -6,23 +6,26 @@ import pg from "pg";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import {initCollabDb,handleCollabRequest,authorizeMcpPartner} from "./collab.mjs";
+import {initJourneyDb,handleJourneyRequest} from "./journey.mjs";
 import {DEV_PAGE} from "./dev-page.mjs";
 const {Pool}=pg;
 
 const PORT=Number(process.env.PORT||3000);
 const AI_API_KEY=process.env.AI_API_KEY||process.env.OPENAI_API_KEY||"";
 const AI_BASE_URL=process.env.AI_BASE_URL||"";
+const OPENAI_API_KEY=process.env.OPENAI_API_KEY||(AI_BASE_URL?"":AI_API_KEY);
 const AI_MODEL=process.env.AI_MODEL||"gpt-5-mini";
 const CORS_ORIGIN=process.env.CORS_ORIGIN||"*";
 const DATABASE_URL=process.env.DATABASE_URL||"";
 const JWT_SECRET=process.env.JWT_SECRET||"";
-const PUBLIC_APP_URL=(process.env.PUBLIC_APP_URL||"https://aeliaai.org.ng").replace(/\/$/,"");
+const PUBLIC_APP_URL=(process.env.PUBLIC_APP_URL||"https://app.aeliaai.org.ng").replace(/\/$/,"");
 const MAIL_FROM=process.env.MAIL_FROM||"AELIA AI <no-reply@aeliaai.org.ng>";
 const RESEND_API_KEY=process.env.RESEND_API_KEY||"";
 const MCP_API_KEY=process.env.AELIA_MCP_API_KEY||"";
 const ADMIN_EMAIL=process.env.ADMIN_EMAIL||"";
 const db=DATABASE_URL?new Pool({connectionString:DATABASE_URL,ssl:!DATABASE_URL.includes("localhost")&&!DATABASE_URL.includes("127.0.0.1")?{rejectUnauthorized:false}:undefined}):null;
 const client=AI_API_KEY?new OpenAI({apiKey:AI_API_KEY,...(AI_BASE_URL?{baseURL:AI_BASE_URL}:{})}):null;
+const mediaClient=OPENAI_API_KEY?new OpenAI({apiKey:OPENAI_API_KEY}):null;
 
 function send(res,status,data){
   const headers={"Content-Type":"application/json; charset=utf-8","Access-Control-Allow-Headers":"Content-Type, Authorization","Access-Control-Allow-Methods":"GET,POST,PATCH,OPTIONS","X-Content-Type-Options":"nosniff","Cache-Control":"no-store","Vary":"Origin"};
@@ -53,6 +56,11 @@ async function initDb(){
     created_at TIMESTAMPTZ NOT NULL DEFAULT now()
   )`);
   await db.query(`CREATE INDEX IF NOT EXISTS aelia_email_tokens_lookup ON aelia_email_tokens(token_hash,purpose,expires_at)`);
+  await db.query(`CREATE TABLE IF NOT EXISTS aelia_guest_chat_limits (
+    ip_hash TEXT PRIMARY KEY,
+    window_started_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    message_count INTEGER NOT NULL DEFAULT 0
+  )`);
   await db.query(`CREATE TABLE IF NOT EXISTS aelia_feedback (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     name TEXT NOT NULL,
@@ -85,9 +93,29 @@ async function initDb(){
   await db.query(`ALTER TABLE aelia_blog_submissions ADD COLUMN IF NOT EXISTS published_at TIMESTAMPTZ NULL`);
   await db.query(`ALTER TABLE aelia_blog_submissions ADD COLUMN IF NOT EXISTS slug TEXT NULL`);
   await initCollabDb(db);
+  await initJourneyDb(db);
 }
 function tokenFor(user){if(!JWT_SECRET)throw new Error("JWT_SECRET is not configured");return jwt.sign({sub:user.id,email:user.email},JWT_SECRET,{expiresIn:"30d"});}
 async function authUser(req){const h=req.headers.authorization||"";if(!h.startsWith("Bearer ")||!JWT_SECRET)return null;try{const p=jwt.verify(h.slice(7),JWT_SECRET);if(!db)return null;const r=await db.query("SELECT id,name,email,email_verified_at,created_at FROM aelia_users WHERE id=$1",[p.sub]);return r.rows[0]||null;}catch{return null;}}
+async function consumeGuestChatQuota(req){
+  if(!db)return {ok:false,unavailable:true};
+  const secret=process.env.RATE_LIMIT_SECRET||JWT_SECRET;
+  if(!secret)return {ok:false,unavailable:true};
+  const forwarded=String(req.headers["x-forwarded-for"]||"").split(",").map(x=>x.trim()).filter(Boolean);
+  const ip=forwarded.at(-1)||String(req.socket?.remoteAddress||"").trim();
+  if(!ip)return {ok:false,unavailable:true};
+  const ipHash=crypto.createHmac("sha256",secret).update(ip).digest("hex");
+  const used=await db.query(`INSERT INTO aelia_guest_chat_limits(ip_hash,window_started_at,message_count)
+    VALUES($1,now(),1)
+    ON CONFLICT(ip_hash) DO UPDATE SET
+      window_started_at=CASE WHEN aelia_guest_chat_limits.window_started_at<=now()-interval '24 hours' THEN now() ELSE aelia_guest_chat_limits.window_started_at END,
+      message_count=CASE WHEN aelia_guest_chat_limits.window_started_at<=now()-interval '24 hours' THEN 1 ELSE aelia_guest_chat_limits.message_count+1 END
+    WHERE aelia_guest_chat_limits.window_started_at<=now()-interval '24 hours' OR aelia_guest_chat_limits.message_count<5
+    RETURNING message_count,window_started_at+interval '24 hours' AS reset_at`,[ipHash]);
+  if(used.rowCount)return {ok:true,used:used.rows[0].message_count,remaining:Math.max(0,5-used.rows[0].message_count),reset_at:used.rows[0].reset_at};
+  const current=await db.query("SELECT window_started_at+interval '24 hours' AS reset_at FROM aelia_guest_chat_limits WHERE ip_hash=$1",[ipHash]);
+  return {ok:false,reset_at:current.rows[0]?.reset_at||null};
+}
 async function sendEmail(to,subject,html){
   if(!RESEND_API_KEY)return {sent:false,reason:"RESEND_API_KEY not configured"};
   const r=await fetch("https://api.resend.com/emails",{method:"POST",headers:{"Authorization":"Bearer "+RESEND_API_KEY,"Content-Type":"application/json"},body:JSON.stringify({from:MAIL_FROM,to:[to],subject,html})});
@@ -102,7 +130,9 @@ async function issueEmailToken(user,purpose){
 }
 async function chat(payload){
   if(!client)return {output:"AELIA API is online in foundation mode. Add a server-side AI_API_KEY/OPENAI_API_KEY to enable live model responses.",mode:"foundation",model:payload.model||AI_MODEL};
-  const response=await client.responses.create({model:payload.model||AI_MODEL,input:payload.message||"",store:false});
+  const history=Array.isArray(payload.history)?payload.history.slice(-20).filter(item=>item&&["user","assistant"].includes(item.role)&&typeof item.content==="string").map(item=>({role:item.role,content:item.content.slice(0,12000)})):[];
+  const input=[...history,{role:"user",content:payload.message||""}];
+  const response=await client.responses.create({model:payload.model||AI_MODEL,input,store:false});
   return {output:response.output_text||"No text returned.",mode:"live",model:payload.model||AI_MODEL};
 }
 const AGENTS={
@@ -122,13 +152,15 @@ function capabilities(){return ["chat","reason","memory","search","research","br
 
 const requestHandler=async(req,res)=>{
   const origin=String(req.headers.origin||"");
-  const ownOrigins=new Set(["https://aeliaai.org.ng","https://www.aeliaai.org.ng","https://admin.aeliaai.org.ng","https://collab.aeliaai.org.ng","https://developers.aeliaai.org.ng","https://dev.aeliaai.org.ng"]);
+  const ownOrigins=new Set(["https://aeliaai.org.ng","https://www.aeliaai.org.ng","https://app.aeliaai.org.ng","https://chat.aeliaai.org.ng","https://community.aeliaai.org.ng","https://admin.aeliaai.org.ng","https://collab.aeliaai.org.ng","https://blogs.aeliaai.org.ng","https://developers.aeliaai.org.ng","https://dev.aeliaai.org.ng"]);
   if(origin&&ownOrigins.has(origin))res.__aeliaCorsOrigin=origin;
   else if(origin&&db){try{const parsed=new URL(origin),host=parsed.hostname.toLowerCase();if(parsed.protocol==="https:"){const allowed=await db.query("SELECT 1 FROM aelia_collab_applications a JOIN aelia_collab_credentials c ON c.application_id=a.id WHERE a.domain=$1 AND a.status=$2 AND c.status=$3 AND c.expires_at>now() LIMIT 1",[host,"approved","active"]);if(allowed.rowCount)res.__aeliaCorsOrigin=origin;}}catch{}}
   if(req.method==="OPTIONS"){send(res,res.__aeliaCorsOrigin?204:403,{});return;}
   try{
     const url=new URL(req.url||"/","http://aelia.local");
     if(url.pathname.startsWith("/api/")) url.pathname=url.pathname.slice(4);
+    const journeyHandled=await handleJourneyRequest(req,res,{db,authUser,send,chat,consumeGuestChatQuota,openaiClient:mediaClient,openaiApiKey:OPENAI_API_KEY});
+    if(journeyHandled)return;
     const collabHandled=await handleCollabRequest(req,res,{db,authUser,sendEmail,adminEmail:ADMIN_EMAIL,chat,runAgent,capabilities});
     if(collabHandled)return;
     const requestHost=String(req.headers["x-forwarded-host"]||req.headers.host||"").split(",")[0].trim().split(":")[0].toLowerCase();
@@ -206,7 +238,18 @@ const requestHandler=async(req,res)=>{
     if(req.method==="GET"&&url.pathname==="/health"){send(res,200,{ok:true,service:"aelia-api",version:"0.5",mode:client?"live":"foundation",database:!!db,email_provider:!!RESEND_API_KEY,time:new Date().toISOString()});return;}
     if(req.method==="GET"&&url.pathname==="/v1/capabilities"){send(res,200,{capabilities:capabilities(),version:"0.5"});return;}
     if(req.method==="GET"&&url.pathname==="/v1/agents"){send(res,200,{agents:Object.entries(AGENTS).map(([id,a])=>({id,name:a.name,status:client?"live":"foundation"}))});return;}
-    if(req.method==="POST"&&url.pathname==="/v1/chat"){send(res,200,await chat(await body(req)));return;}
+    if(req.method==="POST"&&url.pathname==="/v1/chat"){
+      const payload=await body(req),user=await authUser(req);
+      let guestQuota=null;
+      if(!user){
+        guestQuota=await consumeGuestChatQuota(req);
+        if(guestQuota.unavailable)return send(res,503,{error:"Guest chat is temporarily unavailable while usage protection is configured.",code:"GUEST_LIMIT_UNAVAILABLE"});
+        if(!guestQuota.ok)return send(res,429,{error:"You have used the five free guest messages for this 24-hour period. Create an AELIA account to continue and save your conversations.",code:"GUEST_LIMIT_REACHED",limit:5,used:5,reset_at:guestQuota.reset_at,signup_url:"https://app.aeliaai.org.ng/account"});
+      }
+      const result=await chat(payload);
+      if(guestQuota)result.guest_access={limit:5,used:guestQuota.used,remaining:guestQuota.remaining,reset_at:guestQuota.reset_at};
+      send(res,200,result);return;
+    }
     if(req.method==="POST"&&url.pathname==="/v1/briefing"){const p=await body(req);send(res,200,{ok:true,briefing:{summary:"AELIA briefing foundation generated.",focus:p.focus||"priority work",next_steps:p.next_steps||[]},mode:client?"live":"foundation"});return;}
     if(req.method==="POST"&&url.pathname==="/v1/agents/run"){const result=await runAgent(await body(req));send(res,result.mode==="live"?200:202,result);return;}
     if(req.method==="POST"&&url.pathname==="/v1/tasks"){const p=await body(req);send(res,202,{accepted:true,task_id:crypto.randomUUID(),status:"queued",type:p.type||"general"});return;}
